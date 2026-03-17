@@ -11,9 +11,9 @@ import Principal "mo:core/Principal";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 import Runtime "mo:core/Runtime";
-import Migration "migration"; // migration module
+ // migration module
 
-(with migration = Migration.run)
+
 actor {
   // User Profile Types
   public type UserProfile = {

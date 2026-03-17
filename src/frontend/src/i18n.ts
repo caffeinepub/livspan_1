@@ -106,6 +106,7 @@ export const t = {
     nutrition_activity_moderate: "Mäßig aktiv (3–5x/Woche)",
     nutrition_activity_active: "Sehr aktiv (6–7x/Woche)",
     nutrition_activity_very_active: "Extrem aktiv (2x täglich)",
+    nutrition_activity_from_movement: "Abgeleitet aus Bewegung",
     nutrition_calories: "Kalorienaufnahme",
     nutrition_calories_short: "Kalorien",
     nutrition_calories_goal: "Ziel (TDEE)",
@@ -185,6 +186,62 @@ export const t = {
     diary_delete: "Löschen",
     diary_no_entries: "Noch keine Einträge",
     diary_no_entries_sub: "Halte deine Gedanken vor dem Schlafen fest.",
+    // AI Tips
+    ai_tip_sleep_short: [
+      "Unter 7 Stunden Schlaf erhöht das Risiko für Herz-Kreislauf-Erkrankungen und beschleunigt das Altern.",
+      "Versuche, jeden Abend zur gleichen Zeit ins Bett zu gehen – Regelmäßigkeit verbessert die Schlafqualität erheblich.",
+      "Melatonin beginnt 2 Stunden vor dem Einschlafen zu wirken: Reduziere Bildschirmlicht am Abend.",
+    ],
+    ai_tip_sleep_quality: [
+      "Niedrige Schlafqualität hemmt die nächtliche Zellreparatur und den Wachstumshormon-Ausstoß.",
+      "Halte dein Schlafzimmer kühl (16–19°C) – die Körperkerntemperatur muss sinken, damit Tiefschlaf entsteht.",
+      "Magnesiumglycinat am Abend kann die Schlaftiefe und -qualität spürbar verbessern.",
+    ],
+    ai_tip_protein: [
+      "Ausreichend Protein (≥1,6 g/kg) erhält Muskelmasse – ein entscheidender Marker für Langlebigkeit.",
+      "Verteile Proteine gleichmäßig über 3–4 Mahlzeiten für eine optimale Muskelproteinsynthese.",
+      "Leucin-reiche Quellen wie Hüttenkäse, Hähnchen oder Hülsenfrüchte aktivieren mTOR besonders effektiv.",
+    ],
+    ai_tip_veggies: [
+      "400 g Gemüse täglich reduzieren das Risiko für chronische Erkrankungen um bis zu 20 %.",
+      "Polyphenole aus buntem Gemüse schützen Telomere und verlangsamen zelluläres Altern.",
+      "Kreuzblütler wie Brokkoli enthalten Sulforaphan – eines der wirkungsvollsten Longevity-Moleküle.",
+    ],
+    ai_tip_water: [
+      "Selbst leichte Dehydration (1–2%) senkt die kognitive Leistung und erhöht Cortisol.",
+      "Trinke direkt nach dem Aufwachen 300–500 ml Wasser, um den Stoffwechsel anzukurbeln.",
+      "Ausreichende Hydration unterstützt die Nierenfunktion und den Transport von Nährstoffen zu den Zellen.",
+    ],
+    ai_tip_calories_low: [
+      "Starkes Kaloriendefizit kann Muskelmasse abbauen und den Grundumsatz dauerhaft senken.",
+      "Versuche, mindestens 80 % deines TDEE zu erreichen, um Nährstoffversorgung sicherzustellen.",
+      "Proteinreiche Snacks helfen, das Kaloriendefizit zu schließen ohne Fettansammlung zu riskieren.",
+    ],
+    ai_tip_calories_high: [
+      "Ein dauerhafter Kalorienüberschuss von >20 % führt zu Körperfettzunahme und erhöhtem Entzündungsstatus.",
+      "Überprüfe dein Aktivitätsniveau in der Bewegungskarte – ein höherer TDEE könnte gerechtfertigt sein.",
+      "Achte auf Nahrungsmitteldichte: Kalorien aus Vollwertkost sind metabolisch günstiger als aus verarbeiteten Lebensmitteln.",
+    ],
+    ai_tip_bp_elevated: [
+      "Erhöhter Blutdruck beschleunigt die Arterienalterung – jeder 10 mmHg weniger reduziert das Herzrisiko um ~20 %.",
+      "Ausdauersport (3–4x/Woche, 30 Min.) senkt den systolischen Blutdruck durchschnittlich um 5–8 mmHg.",
+      "Reduziere Natrium unter 2g/Tag und erhöhe Kalium durch Bananen, Avocados und Blattgemüse.",
+    ],
+    ai_tip_hr_high: [
+      "Ein Ruhepuls über 70 bpm ist mit erhöhter kardiovaskulärer Mortalität assoziiert.",
+      "Regelmäßiges Ausdauertraining kann den Ruhepuls langfristig um 10–15 bpm senken.",
+      "Atemübungen (4-7-8-Methode) aktivieren den Parasympathikus und senken kurzfristig den Herzschlag.",
+    ],
+    ai_tip_movement_low: [
+      "Weniger als 30 Minuten Bewegung pro Tag erhöht das Sterblichkeitsrisiko vergleichbar mit Rauchen.",
+      "Bereits 10 Minuten zügiges Gehen verbessern die mitochondriale Effizienz messbar.",
+      "Integriere Bewegungs-Snacks: 2-Minuten-Gehen nach jedem Sitzen verbessert die Glukoseverwertung.",
+    ],
+    ai_tip_movement_intensity: [
+      "Niedriger Intensitätssport nutzt primär Fett als Energiequelle und fördert die Mitochondriengesundheit.",
+      "Erhöhe die Intensität schrittweise – Zone 2 (60–70% HFmax) ist optimal für Longevity-Adaption.",
+      "Wechsle zwischen niedrig- und hochintensivem Training für maximalen kardiovaskulären Nutzen.",
+    ],
   },
   en: {
     tagline: "Powered by LivSpan Token",
@@ -293,6 +350,7 @@ export const t = {
     nutrition_activity_moderate: "Moderately active (3–5x/week)",
     nutrition_activity_active: "Very active (6–7x/week)",
     nutrition_activity_very_active: "Extra active (2x daily)",
+    nutrition_activity_from_movement: "Derived from Exercise",
     nutrition_calories: "Calorie Intake",
     nutrition_calories_short: "Calories",
     nutrition_calories_goal: "Goal (TDEE)",
@@ -372,6 +430,62 @@ export const t = {
     diary_delete: "Delete",
     diary_no_entries: "No entries yet",
     diary_no_entries_sub: "Record your thoughts before sleep.",
+    // AI Tips
+    ai_tip_sleep_short: [
+      "Less than 7 hours of sleep increases the risk of cardiovascular disease and accelerates aging.",
+      "Try going to bed at the same time each evening — consistency significantly improves sleep quality.",
+      "Melatonin starts 2 hours before sleep: reduce screen light in the evening.",
+    ],
+    ai_tip_sleep_quality: [
+      "Low sleep quality inhibits nightly cell repair and growth hormone release.",
+      "Keep your bedroom cool (61–66°F / 16–19°C) — your core temperature must drop for deep sleep.",
+      "Magnesium glycinate in the evening can noticeably improve sleep depth and quality.",
+    ],
+    ai_tip_protein: [
+      "Adequate protein (≥1.6g/kg) preserves muscle mass — a key longevity marker.",
+      "Distribute protein evenly across 3–4 meals for optimal muscle protein synthesis.",
+      "Leucine-rich sources like cottage cheese, chicken, or legumes activate mTOR most effectively.",
+    ],
+    ai_tip_veggies: [
+      "400g of vegetables daily reduces the risk of chronic disease by up to 20%.",
+      "Polyphenols from colorful vegetables protect telomeres and slow cellular aging.",
+      "Cruciferous vegetables like broccoli contain sulforaphane — one of the most potent longevity molecules.",
+    ],
+    ai_tip_water: [
+      "Even mild dehydration (1–2%) reduces cognitive performance and raises cortisol.",
+      "Drink 300–500ml of water right after waking to kickstart your metabolism.",
+      "Adequate hydration supports kidney function and nutrient transport to cells.",
+    ],
+    ai_tip_calories_low: [
+      "A severe calorie deficit can break down muscle mass and permanently lower your metabolic rate.",
+      "Try to reach at least 80% of your TDEE to ensure adequate nutrient supply.",
+      "Protein-rich snacks help close the calorie gap without risking fat accumulation.",
+    ],
+    ai_tip_calories_high: [
+      "A sustained calorie surplus of >20% leads to body fat gain and increased inflammation.",
+      "Review your activity level in the Exercise card — a higher TDEE may be warranted.",
+      "Focus on food density: calories from whole foods are metabolically better than processed ones.",
+    ],
+    ai_tip_bp_elevated: [
+      "Elevated blood pressure accelerates arterial aging — every 10 mmHg less reduces heart risk by ~20%.",
+      "Endurance exercise (3–4x/week, 30 min) lowers systolic BP by an average of 5–8 mmHg.",
+      "Reduce sodium below 2g/day and increase potassium via bananas, avocados, and leafy greens.",
+    ],
+    ai_tip_hr_high: [
+      "A resting heart rate above 70 bpm is associated with increased cardiovascular mortality.",
+      "Regular endurance training can lower resting heart rate by 10–15 bpm over time.",
+      "Breathing exercises (4-7-8 method) activate the parasympathetic system and lower heart rate.",
+    ],
+    ai_tip_movement_low: [
+      "Less than 30 minutes of activity per day increases mortality risk comparably to smoking.",
+      "Even 10 minutes of brisk walking measurably improves mitochondrial efficiency.",
+      "Add movement snacks: 2 minutes of walking after sitting improves glucose metabolism.",
+    ],
+    ai_tip_movement_intensity: [
+      "Low-intensity exercise primarily uses fat as fuel and promotes mitochondrial health.",
+      "Gradually increase intensity — Zone 2 (60–70% max HR) is optimal for longevity adaptation.",
+      "Alternate between low and high intensity training for maximum cardiovascular benefit.",
+    ],
   },
 } as const;
 

@@ -1,25 +1,22 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Flame, Salad, Utensils, Zap } from "lucide-react";
-import { useState } from "react";
+import { Activity, Flame, Salad, Utensils, Zap } from "lucide-react";
 import { useDailyHealth } from "../hooks/useDailyHealth";
 import { useLanguage } from "../hooks/useLanguage";
 import { useGetCallerProfile } from "../hooks/useQueries";
 import { t } from "../i18n";
+import AiTip from "./AiTip";
 
-const ACTIVITY_FACTORS: Record<string, number> = {
-  sedentary: 1.2,
-  light: 1.375,
-  moderate: 1.55,
-  active: 1.725,
-  very_active: 1.9,
-};
+function deriveActivityFactor(
+  intensity: number,
+  duration: number,
+): { factor: number; key: string } {
+  if (duration === 0) return { factor: 1.2, key: "sedentary" };
+  if (duration < 30 && intensity < 4) return { factor: 1.375, key: "light" };
+  if (duration >= 90 && intensity >= 8)
+    return { factor: 1.9, key: "very_active" };
+  if (duration > 60 && intensity >= 7) return { factor: 1.725, key: "active" };
+  return { factor: 1.55, key: "moderate" };
+}
 
 function calcBMR(
   weightKg: number,
@@ -39,7 +36,6 @@ export default function NutritionCard() {
   const tr = t[lang];
   const { data: profile } = useGetCallerProfile();
   const { health, setHealth } = useDailyHealth();
-  const [activityLevel, setActivityLevel] = useState("moderate");
 
   const weightKg = (profile as any)?.weightKg ?? 70;
   const heightCm = (profile as any)?.heightCm
@@ -58,8 +54,12 @@ export default function NutritionCard() {
       ? calcBMR(weightKg, heightCm, age, gender)
       : null;
 
-  const tdee =
-    bmr !== null ? Math.round(bmr * ACTIVITY_FACTORS[activityLevel]) : null;
+  const activityInfo = deriveActivityFactor(
+    health.intensity ?? 0,
+    health.movementDuration ?? 0,
+  );
+
+  const tdee = bmr !== null ? Math.round(bmr * activityInfo.factor) : null;
 
   const calorieGoal = tdee ?? 2000;
   const calorieMax = tdee ? Math.round(tdee * 1.5) : 4000;
@@ -76,13 +76,21 @@ export default function NutritionCard() {
   const waterPct = Math.min(100, Math.round((water / 2) * 100));
   const caloriesPct = Math.min(100, Math.round((calories / calorieGoal) * 100));
 
-  const activityOptions = [
-    { value: "sedentary", label: tr.nutrition_activity_sedentary },
-    { value: "light", label: tr.nutrition_activity_light },
-    { value: "moderate", label: tr.nutrition_activity_moderate },
-    { value: "active", label: tr.nutrition_activity_active },
-    { value: "very_active", label: tr.nutrition_activity_very_active },
-  ];
+  const activityLabelKey =
+    `nutrition_activity_${activityInfo.key}` as keyof typeof tr;
+
+  // Build AI tips
+  const aiTips: string[] = [];
+  if (protein > 0 && proteinPct < 80)
+    aiTips.push(...(tr.ai_tip_protein as unknown as string[]));
+  if (veggies > 0 && veggiesPct < 80)
+    aiTips.push(...(tr.ai_tip_veggies as unknown as string[]));
+  if (water > 0 && waterPct < 80)
+    aiTips.push(...(tr.ai_tip_water as unknown as string[]));
+  if (calories > 0 && caloriesPct < 60)
+    aiTips.push(...(tr.ai_tip_calories_low as unknown as string[]));
+  else if (calories > 0 && caloriesPct > 130)
+    aiTips.push(...(tr.ai_tip_calories_high as unknown as string[]));
 
   return (
     <div className="glass-card rounded-2xl p-5">
@@ -100,7 +108,7 @@ export default function NutritionCard() {
         </div>
       </div>
 
-      {/* BMR + TDEE Tiles */}
+      {/* BMR + Activity + TDEE Tiles */}
       <div className="mb-5 space-y-2">
         {/* BMR */}
         <div className="rounded-xl bg-white/5 border border-border/40 px-4 py-3 flex items-center gap-3">
@@ -128,28 +136,23 @@ export default function NutritionCard() {
           </div>
         </div>
 
-        {/* Activity Level Selector */}
+        {/* Activity Level (derived from Exercise card) */}
         {bmr !== null && (
-          <div className="rounded-xl bg-white/5 border border-border/40 px-4 py-3">
-            <span className="text-xs text-muted-foreground block mb-2">
-              {tr.nutrition_activity_label}
-            </span>
-            <Select value={activityLevel} onValueChange={setActivityLevel}>
-              <SelectTrigger className="bg-input border-border/60 h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {activityOptions.map((opt) => (
-                  <SelectItem
-                    key={opt.value}
-                    value={opt.value}
-                    className="text-xs"
-                  >
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="rounded-xl bg-white/5 border border-border/40 px-4 py-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center text-blue-400 shrink-0">
+              <Activity className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-xs text-muted-foreground block">
+                {tr.nutrition_activity_label}
+              </span>
+              <span className="text-sm font-semibold text-foreground leading-tight">
+                {tr[activityLabelKey] as string}
+              </span>
+              <span className="text-[10px] text-muted-foreground/70 block mt-0.5">
+                {tr.nutrition_activity_from_movement}
+              </span>
+            </div>
           </div>
         )}
 
@@ -323,6 +326,9 @@ export default function NutritionCard() {
           <ProgressDot pct={veggiesPct} label={tr.nutrition_veggies_short} />
           <ProgressDot pct={waterPct} label={tr.nutrition_water_short} />
         </div>
+
+        {/* AI Tips */}
+        <AiTip tips={aiTips} lang={lang} />
       </div>
     </div>
   );

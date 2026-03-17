@@ -3,6 +3,7 @@ import { HeartPulse } from "lucide-react";
 import { useDailyHealth } from "../hooks/useDailyHealth";
 import { useLanguage } from "../hooks/useLanguage";
 import { t } from "../i18n";
+import AiTip from "./AiTip";
 
 function bpCategory(systolic: number, diastolic: number, lang: "de" | "en") {
   if (systolic < 120 && diastolic < 80)
@@ -47,6 +48,15 @@ export default function StressCard() {
 
   const bpColorClass = bpColor(systolic, diastolic);
   const hrColorClass = hrColor(restingHr);
+
+  // Build AI tips
+  const aiTips: string[] = [];
+  const bpElevated = systolic >= 130 || diastolic >= 80;
+  const hrHigh = restingHr > 70;
+  if (systolic > 0 && bpElevated)
+    aiTips.push(...(tr.ai_tip_bp_elevated as unknown as string[]));
+  if (restingHr > 0 && hrHigh)
+    aiTips.push(...(tr.ai_tip_hr_high as unknown as string[]));
 
   return (
     <div className="glass-card rounded-2xl p-5">
@@ -189,6 +199,9 @@ export default function StressCard() {
             </p>
           </div>
         </div>
+
+        {/* AI Tips */}
+        <AiTip tips={aiTips} lang={lang} />
       </div>
     </div>
   );

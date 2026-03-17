@@ -3,6 +3,7 @@ import { Dumbbell } from "lucide-react";
 import { useDailyHealth } from "../hooks/useDailyHealth";
 import { useLanguage } from "../hooks/useLanguage";
 import { t } from "../i18n";
+import AiTip from "./AiTip";
 
 type SportKey =
   | "running"
@@ -52,6 +53,13 @@ export default function MovementCard() {
 
   const currentSportLabel =
     sportOptions.find((o) => o.value === sport)?.label ?? sport;
+
+  // Build AI tips
+  const aiTips: string[] = [];
+  if (duration > 0 && duration < 30)
+    aiTips.push(...(tr.ai_tip_movement_low as unknown as string[]));
+  if (duration > 0 && intensity < 4)
+    aiTips.push(...(tr.ai_tip_movement_intensity as unknown as string[]));
 
   return (
     <div className="glass-card rounded-2xl p-5">
@@ -187,6 +195,9 @@ export default function MovementCard() {
             </p>
           </div>
         </div>
+
+        {/* AI Tips */}
+        <AiTip tips={aiTips} lang={lang} />
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { Moon } from "lucide-react";
 import { useDailyHealth } from "../hooks/useDailyHealth";
 import { useLanguage } from "../hooks/useLanguage";
 import { t } from "../i18n";
+import AiTip from "./AiTip";
 
 export default function SleepCard() {
   const { lang } = useLanguage();
@@ -32,6 +33,13 @@ export default function SleepCard() {
 
   const durationColor = duration >= 7 ? "text-green-accent" : "text-foreground";
   const qualityColor = quality >= 7 ? "text-green-accent" : "text-foreground";
+
+  // Build AI tips
+  const aiTips: string[] = [];
+  if (duration > 0 && duration < 7)
+    aiTips.push(...(tr.ai_tip_sleep_short as unknown as string[]));
+  if (quality > 0 && quality < 6)
+    aiTips.push(...(tr.ai_tip_sleep_quality as unknown as string[]));
 
   return (
     <div className="glass-card rounded-2xl p-5">
@@ -118,6 +126,9 @@ export default function SleepCard() {
             color="indigo"
           />
         </div>
+
+        {/* AI Tips */}
+        <AiTip tips={aiTips} lang={lang} />
       </div>
     </div>
   );

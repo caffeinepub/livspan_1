@@ -5,6 +5,27 @@ import { useLanguage } from "../hooks/useLanguage";
 import { useGetCallerProfile, useSaveScoreEntry } from "../hooks/useQueries";
 import { t } from "../i18n";
 
+const ACTIVITY_FACTORS: Record<string, number> = {
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  very_active: 1.9,
+};
+
+function calcBMR(
+  weightKg: number,
+  heightCm: number,
+  age: number,
+  gender: string,
+): number {
+  const male = 10 * weightKg + 6.25 * heightCm - 5 * age + 5;
+  const female = 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+  if (gender === "male") return Math.round(male);
+  if (gender === "female") return Math.round(female);
+  return Math.round((male + female) / 2);
+}
+
 function getTodayKey() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -22,12 +43,22 @@ function calcNutritionScore(
   protein: number,
   veggies: number,
   water: number,
+  calories: number,
   weightKg: number,
+  tdee: number | null,
 ) {
   const proteinTarget = weightKg * 1.8;
   const proteinScore = Math.min(100, (protein / proteinTarget) * 100);
   const veggiesScore = Math.min(100, (veggies / 400) * 100);
   const waterScore = Math.min(100, (water / 2) * 100);
+
+  if (calories > 0 && tdee !== null && tdee > 0) {
+    // Score 100 at TDEE, decreasing for over/under (penalises 50% deviation fully)
+    const calorieRatio = calories / tdee;
+    const calorieScore = Math.max(0, 100 - Math.abs(calorieRatio - 1) * 200);
+    return (proteinScore + veggiesScore + waterScore + calorieScore) / 4;
+  }
+
   return (proteinScore + veggiesScore + waterScore) / 3;
 }
 
@@ -164,6 +195,21 @@ export default function LongevityScoreCard() {
   const { health } = useDailyHealth();
 
   const weightKg = (profile as any)?.weightKg ?? 70;
+  const heightCm = (profile as any)?.heightCm
+    ? Number((profile as any).heightCm)
+    : null;
+  const birthYear = (profile as any)?.birthYear
+    ? Number((profile as any).birthYear)
+    : null;
+  const gender: string = (profile as any)?.gender ?? "";
+  const currentYear = new Date().getFullYear();
+  const age = birthYear ? currentYear - birthYear : null;
+  const bmr =
+    weightKg && heightCm && age
+      ? calcBMR(weightKg, heightCm, age, gender)
+      : null;
+  const tdee =
+    bmr !== null ? Math.round(bmr * ACTIVITY_FACTORS.moderate) : null;
 
   const {
     sleepDuration,
@@ -171,6 +217,7 @@ export default function LongevityScoreCard() {
     protein,
     veggies,
     water,
+    calories,
     movementDuration,
     intensity,
     systolic,
@@ -181,14 +228,14 @@ export default function LongevityScoreCard() {
   } = health;
 
   const hasSleep = sleepDuration > 0 || sleepQuality > 0;
-  const hasNutrition = protein > 0 || veggies > 0 || water > 0;
+  const hasNutrition = protein > 0 || veggies > 0 || water > 0 || calories > 0;
   const hasStress = systolic > 0;
   const hasMovement = movementDuration > 0;
   const hasFasting = !!fastingStart && !!fastingEnd;
 
   const sleepScore = hasSleep ? calcSleepScore(sleepDuration, sleepQuality) : 0;
   const nutritionScore = hasNutrition
-    ? calcNutritionScore(protein, veggies, water, weightKg)
+    ? calcNutritionScore(protein, veggies, water, calories, weightKg, tdee)
     : 0;
   const movementScore = hasMovement
     ? calcMovementScore(movementDuration, intensity)
