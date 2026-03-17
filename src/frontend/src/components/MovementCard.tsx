@@ -1,24 +1,8 @@
 import { Slider } from "@/components/ui/slider";
 import { Dumbbell } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useDailyHealth } from "../hooks/useDailyHealth";
 import { useLanguage } from "../hooks/useLanguage";
-import { useGetTodayHealthData, useSaveHealthData } from "../hooks/useQueries";
 import { t } from "../i18n";
-
-const STORAGE_KEY = "livspan-movement";
-
-function getTodayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
-
-function getTodayKeyPadded() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 type SportKey =
   | "running"
@@ -28,37 +12,6 @@ type SportKey =
   | "yoga"
   | "hiking"
   | "other";
-
-interface MovementValues {
-  sport: SportKey;
-  intensity: number;
-  duration: number;
-}
-
-const DEFAULTS: MovementValues = {
-  sport: "running",
-  intensity: 5,
-  duration: 30,
-};
-
-function loadToday(): MovementValues {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULTS };
-    const parsed = JSON.parse(raw);
-    if (parsed.date !== getTodayKey()) return { ...DEFAULTS };
-    return parsed.values;
-  } catch {
-    return { ...DEFAULTS };
-  }
-}
-
-function saveToday(values: MovementValues) {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ date: getTodayKey(), values }),
-  );
-}
 
 function intensityColor(intensity: number) {
   if (intensity <= 3) return "text-green-accent";
@@ -76,53 +29,9 @@ function durationColor(duration: number) {
 export default function MovementCard() {
   const { lang } = useLanguage();
   const tr = t[lang];
+  const { health, setHealth } = useDailyHealth();
 
-  const todayKey = getTodayKeyPadded();
-  const { data: backendHealth } = useGetTodayHealthData(todayKey);
-  const saveHealth = useSaveHealthData();
-
-  const [values, setValues] = useState<MovementValues>(() => loadToday());
-  const initializedRef = useRef(false);
-
-  useEffect(() => {
-    if (backendHealth && !initializedRef.current) {
-      initializedRef.current = true;
-      const local = loadToday();
-      setValues({
-        sport: (backendHealth.sport as SportKey) ?? local.sport,
-        intensity: backendHealth.intensity ?? local.intensity,
-        duration: backendHealth.movementDuration ?? local.duration,
-      });
-    }
-  }, [backendHealth]);
-
-  useEffect(() => {
-    saveToday(values);
-    const timer = setTimeout(() => {
-      saveHealth.mutate({
-        date: todayKey,
-        sport: values.sport,
-        intensity: values.intensity,
-        movementDuration: values.duration,
-        sleepDuration: backendHealth?.sleepDuration ?? undefined,
-        sleepQuality: backendHealth?.sleepQuality ?? undefined,
-        protein: backendHealth?.protein ?? undefined,
-        veggies: backendHealth?.veggies ?? undefined,
-        water: backendHealth?.water ?? undefined,
-        systolic: backendHealth?.systolic ?? undefined,
-        diastolic: backendHealth?.diastolic ?? undefined,
-        restingHr: backendHealth?.restingHr ?? undefined,
-        fastingStart: backendHealth?.fastingStart ?? undefined,
-        fastingEnd: backendHealth?.fastingEnd ?? undefined,
-      });
-    }, 800);
-    return () => clearTimeout(timer);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: backendHealth used for merge only, intentionally stable
-    // eslint-disable-next-line
-  }, [values, backendHealth, saveHealth, todayKey]);
-
-  const set = <K extends keyof MovementValues>(key: K, v: MovementValues[K]) =>
-    setValues((prev) => ({ ...prev, [key]: v }));
+  const { sport, intensity, movementDuration: duration } = health;
 
   const sportOptions: { value: SportKey; label: string }[] = [
     { value: "running", label: tr.movement_sport_running },
@@ -135,14 +44,14 @@ export default function MovementCard() {
   ];
 
   const intensityLabel = () => {
-    if (values.intensity <= 3) return tr.movement_status_low;
-    if (values.intensity <= 6) return tr.movement_status_moderate;
-    if (values.intensity <= 9) return tr.movement_status_high;
+    if (intensity <= 3) return tr.movement_status_low;
+    if (intensity <= 6) return tr.movement_status_moderate;
+    if (intensity <= 9) return tr.movement_status_high;
     return tr.movement_status_max;
   };
 
   const currentSportLabel =
-    sportOptions.find((o) => o.value === values.sport)?.label ?? values.sport;
+    sportOptions.find((o) => o.value === sport)?.label ?? sport;
 
   return (
     <div className="glass-card rounded-2xl p-5">
@@ -172,8 +81,8 @@ export default function MovementCard() {
             </span>
           </div>
           <select
-            value={values.sport}
-            onChange={(e) => set("sport", e.target.value as SportKey)}
+            value={sport}
+            onChange={(e) => setHealth({ sport: e.target.value as SportKey })}
             className="w-full rounded-lg border border-border/50 bg-muted/40 text-foreground text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400/50 transition-colors"
             data-ocid="movement.select"
           >
@@ -196,13 +105,11 @@ export default function MovementCard() {
               {tr.movement_intensity}
             </span>
             <span className="text-xs text-muted-foreground">
-              <span
-                className={`font-semibold ${intensityColor(values.intensity)}`}
-              >
-                {values.intensity}/10
+              <span className={`font-semibold ${intensityColor(intensity)}`}>
+                {intensity}/10
               </span>
               {" – "}
-              <span className={intensityColor(values.intensity)}>
+              <span className={intensityColor(intensity)}>
                 {intensityLabel()}
               </span>
             </span>
@@ -211,8 +118,8 @@ export default function MovementCard() {
             min={1}
             max={10}
             step={1}
-            value={[values.intensity]}
-            onValueChange={([v]) => set("intensity", v)}
+            value={[intensity]}
+            onValueChange={([v]) => setHealth({ intensity: v })}
             className="w-full"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
@@ -231,17 +138,17 @@ export default function MovementCard() {
               {tr.movement_duration}
             </span>
             <span
-              className={`text-xs font-semibold ${durationColor(values.duration)}`}
+              className={`text-xs font-semibold ${durationColor(duration)}`}
             >
-              {values.duration} min
+              {duration} min
             </span>
           </div>
           <Slider
             min={0}
             max={180}
             step={5}
-            value={[values.duration]}
-            onValueChange={([v]) => set("duration", v)}
+            value={[duration]}
+            onValueChange={([v]) => setHealth({ movementDuration: v })}
             className="w-full"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
@@ -263,10 +170,8 @@ export default function MovementCard() {
           </div>
           <div className="w-px h-8 bg-border/30" />
           <div className="text-center">
-            <p
-              className={`text-sm font-bold ${intensityColor(values.intensity)}`}
-            >
-              {values.intensity}/10
+            <p className={`text-sm font-bold ${intensityColor(intensity)}`}>
+              {intensity}/10
             </p>
             <p className="text-[10px] text-muted-foreground">
               {tr.movement_intensity_short}
@@ -274,10 +179,8 @@ export default function MovementCard() {
           </div>
           <div className="w-px h-8 bg-border/30" />
           <div className="text-center">
-            <p
-              className={`text-sm font-bold ${durationColor(values.duration)}`}
-            >
-              {values.duration} min
+            <p className={`text-sm font-bold ${durationColor(duration)}`}>
+              {duration} min
             </p>
             <p className="text-[10px] text-muted-foreground">
               {tr.movement_duration_short}

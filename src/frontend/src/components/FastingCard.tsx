@@ -1,38 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Pencil, Timer, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useDailyHealth } from "../hooks/useDailyHealth";
 import { useLanguage } from "../hooks/useLanguage";
-import { useGetTodayHealthData, useSaveHealthData } from "../hooks/useQueries";
 import { t } from "../i18n";
-
-const STORAGE_KEY = "livspan-fasting";
-
-interface FastingSchedule {
-  startTime: string; // "HH:MM"
-  endTime: string; // "HH:MM"
-}
-
-function getTodayKeyPadded() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function loadSchedule(): FastingSchedule | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as FastingSchedule;
-  } catch {
-    return null;
-  }
-}
-
-function saveSchedule(s: FastingSchedule) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-}
 
 function timeToMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
@@ -79,7 +50,6 @@ function computePhase(
       progressFraction: Math.min(1, elapsedSec / totalSec),
     };
   }
-  // in eating phase
   let elapsed: number;
   if (nowMin >= endMin) {
     elapsed = nowMin - endMin;
@@ -158,21 +128,18 @@ function PhaseRing({
 export default function FastingCard() {
   const { lang } = useLanguage();
   const tr = t[lang];
+  const { health, setHealth } = useDailyHealth();
 
-  const todayKey = getTodayKeyPadded();
-  const { data: backendHealth } = useGetTodayHealthData(todayKey);
-  const saveHealth = useSaveHealthData();
+  const fastingStart = health.fastingStart;
+  const fastingEnd = health.fastingEnd;
+  const hasSchedule = !!fastingStart && !!fastingEnd;
 
-  const [schedule, setSchedule] = useState<FastingSchedule | null>(() =>
-    loadSchedule(),
-  );
   const [editMode, setEditMode] = useState(false);
-  const [draftStart, setDraftStart] = useState("20:00");
-  const [draftEnd, setDraftEnd] = useState("12:00");
+  const [draftStart, setDraftStart] = useState(fastingStart ?? "20:00");
+  const [draftEnd, setDraftEnd] = useState(fastingEnd ?? "12:00");
 
   const [now, setNow] = useState(() => new Date());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const initializedRef = useRef(false);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => setNow(new Date()), 1000);
@@ -181,64 +148,30 @@ export default function FastingCard() {
     };
   }, []);
 
-  // Load from backend on first load
+  // Sync draft state when context loads fasting data
   useEffect(() => {
-    if (backendHealth && !initializedRef.current) {
-      initializedRef.current = true;
-      if (backendHealth.fastingStart && backendHealth.fastingEnd) {
-        const s: FastingSchedule = {
-          startTime: backendHealth.fastingStart,
-          endTime: backendHealth.fastingEnd,
-        };
-        saveSchedule(s);
-        setSchedule(s);
-      }
-    }
-  }, [backendHealth]);
-
-  const persistSchedule = (s: FastingSchedule) => {
-    saveSchedule(s);
-    setSchedule(s);
-    // Save to backend
-    saveHealth.mutate({
-      date: todayKey,
-      fastingStart: s.startTime,
-      fastingEnd: s.endTime,
-      sleepDuration: backendHealth?.sleepDuration ?? undefined,
-      sleepQuality: backendHealth?.sleepQuality ?? undefined,
-      protein: backendHealth?.protein ?? undefined,
-      veggies: backendHealth?.veggies ?? undefined,
-      water: backendHealth?.water ?? undefined,
-      sport: backendHealth?.sport ?? undefined,
-      intensity: backendHealth?.intensity ?? undefined,
-      movementDuration: backendHealth?.movementDuration ?? undefined,
-      systolic: backendHealth?.systolic ?? undefined,
-      diastolic: backendHealth?.diastolic ?? undefined,
-      restingHr: backendHealth?.restingHr ?? undefined,
-    });
-  };
+    if (fastingStart) setDraftStart(fastingStart);
+    if (fastingEnd) setDraftEnd(fastingEnd);
+  }, [fastingStart, fastingEnd]);
 
   const handleEdit = () => {
-    if (schedule) {
-      setDraftStart(schedule.startTime);
-      setDraftEnd(schedule.endTime);
-    }
+    setDraftStart(fastingStart ?? "20:00");
+    setDraftEnd(fastingEnd ?? "12:00");
     setEditMode(true);
   };
 
   const handleSave = () => {
     if (draftStart === draftEnd) return;
-    const s: FastingSchedule = { startTime: draftStart, endTime: draftEnd };
-    persistSchedule(s);
+    setHealth({ fastingStart: draftStart, fastingEnd: draftEnd });
     setEditMode(false);
   };
 
   const handleCancel = () => setEditMode(false);
 
   let phaseInfo: ReturnType<typeof computePhase> | null = null;
-  if (schedule) {
-    const startMin = timeToMinutes(schedule.startTime);
-    const endMin = timeToMinutes(schedule.endTime);
+  if (hasSchedule) {
+    const startMin = timeToMinutes(fastingStart!);
+    const endMin = timeToMinutes(fastingEnd!);
     const nowMin = now.getHours() * 60 + now.getMinutes();
     const nowSec = now.getSeconds();
     phaseInfo = computePhase(startMin, endMin, nowMin, nowSec);
@@ -261,7 +194,7 @@ export default function FastingCard() {
             </p>
           </div>
         </div>
-        {schedule && !editMode && (
+        {hasSchedule && !editMode && (
           <button
             type="button"
             onClick={handleEdit}
@@ -275,7 +208,7 @@ export default function FastingCard() {
       </div>
 
       {/* No schedule */}
-      {!schedule && !editMode && (
+      {!hasSchedule && !editMode && (
         <div className="text-center py-4" data-ocid="fasting.empty_state">
           <p className="text-sm text-muted-foreground mb-3">
             {tr.fasting_no_schedule}
@@ -343,7 +276,7 @@ export default function FastingCard() {
             >
               {tr.fasting_save}
             </Button>
-            {schedule && (
+            {hasSchedule && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -359,7 +292,7 @@ export default function FastingCard() {
       )}
 
       {/* Live view */}
-      {schedule && !editMode && phaseInfo && (
+      {hasSchedule && !editMode && phaseInfo && (
         <div className="flex flex-col items-center gap-3">
           <div className="relative flex items-center justify-center">
             <PhaseRing
@@ -399,14 +332,14 @@ export default function FastingCard() {
           <div className="w-full flex items-center justify-between text-[10px] text-muted-foreground px-1">
             <div className="text-center">
               <p className="font-semibold text-foreground text-xs">
-                {schedule.startTime}
+                {fastingStart}
               </p>
               <p>{tr.fasting_start}</p>
             </div>
             <div className="flex-1 mx-2 border-t border-dashed border-border/40" />
             <div className="text-center">
               <p className="font-semibold text-foreground text-xs">
-                {schedule.endTime}
+                {fastingEnd}
               </p>
               <p>{tr.fasting_end}</p>
             </div>

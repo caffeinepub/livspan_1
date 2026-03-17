@@ -1,95 +1,21 @@
 import { Slider } from "@/components/ui/slider";
 import { Moon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useDailyHealth } from "../hooks/useDailyHealth";
 import { useLanguage } from "../hooks/useLanguage";
-import { useGetTodayHealthData, useSaveHealthData } from "../hooks/useQueries";
 import { t } from "../i18n";
-
-const STORAGE_KEY = "livspan-sleep";
-
-function getTodayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
-
-function getTodayKeyPadded() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function loadToday(): { duration: number; quality: number } {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { duration: 7, quality: 5 };
-    const parsed = JSON.parse(raw);
-    if (parsed.date !== getTodayKey()) return { duration: 7, quality: 5 };
-    return parsed.values;
-  } catch {
-    return { duration: 7, quality: 5 };
-  }
-}
-
-function saveToday(values: { duration: number; quality: number }) {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ date: getTodayKey(), values }),
-  );
-}
 
 export default function SleepCard() {
   const { lang } = useLanguage();
   const tr = t[lang];
+  const { health, setHealth } = useDailyHealth();
 
-  const todayKey = getTodayKeyPadded();
-  const { data: backendHealth } = useGetTodayHealthData(todayKey);
-  const saveHealth = useSaveHealthData();
+  const { sleepDuration: duration, sleepQuality: quality } = health;
 
-  const [values, setValues] = useState(() => loadToday());
-  const initializedRef = useRef(false);
+  const set = (key: "sleepDuration" | "sleepQuality", v: number) =>
+    setHealth({ [key]: v });
 
-  useEffect(() => {
-    if (backendHealth && !initializedRef.current) {
-      initializedRef.current = true;
-      setValues({
-        duration: backendHealth.sleepDuration ?? loadToday().duration,
-        quality: backendHealth.sleepQuality ?? loadToday().quality,
-      });
-    }
-  }, [backendHealth]);
-
-  useEffect(() => {
-    saveToday(values);
-    const timer = setTimeout(() => {
-      saveHealth.mutate({
-        date: todayKey,
-        sleepDuration: values.duration,
-        sleepQuality: values.quality,
-        protein: backendHealth?.protein ?? undefined,
-        veggies: backendHealth?.veggies ?? undefined,
-        water: backendHealth?.water ?? undefined,
-        sport: backendHealth?.sport ?? undefined,
-        intensity: backendHealth?.intensity ?? undefined,
-        movementDuration: backendHealth?.movementDuration ?? undefined,
-        systolic: backendHealth?.systolic ?? undefined,
-        diastolic: backendHealth?.diastolic ?? undefined,
-        restingHr: backendHealth?.restingHr ?? undefined,
-        fastingStart: backendHealth?.fastingStart ?? undefined,
-        fastingEnd: backendHealth?.fastingEnd ?? undefined,
-      });
-    }, 800);
-    return () => clearTimeout(timer);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: backendHealth used for merge only, intentionally stable
-    // eslint-disable-next-line
-  }, [values, backendHealth, saveHealth, todayKey]);
-
-  const set = (key: "duration" | "quality", v: number) =>
-    setValues((prev) => ({ ...prev, [key]: v }));
-
-  const durationPct = Math.min(100, Math.round((values.duration / 9) * 100));
-  const qualityPct = Math.min(100, Math.round((values.quality / 10) * 100));
+  const durationPct = Math.min(100, Math.round((duration / 9) * 100));
+  const qualityPct = Math.min(100, Math.round((quality / 10) * 100));
 
   const qualityLabel = (q: number) => {
     if (lang === "de") {
@@ -104,10 +30,8 @@ export default function SleepCard() {
     return "Excellent";
   };
 
-  const durationColor =
-    values.duration >= 7 ? "text-green-accent" : "text-foreground";
-  const qualityColor =
-    values.quality >= 7 ? "text-green-accent" : "text-foreground";
+  const durationColor = duration >= 7 ? "text-green-accent" : "text-foreground";
+  const qualityColor = quality >= 7 ? "text-green-accent" : "text-foreground";
 
   return (
     <div className="glass-card rounded-2xl p-5">
@@ -134,7 +58,7 @@ export default function SleepCard() {
             </span>
             <span className="text-xs text-muted-foreground">
               <span className={`font-semibold ${durationColor}`}>
-                {values.duration}h
+                {duration}h
               </span>
               {" / 9h"}
             </span>
@@ -143,8 +67,8 @@ export default function SleepCard() {
             min={0}
             max={12}
             step={0.5}
-            value={[values.duration]}
-            onValueChange={([v]) => set("duration", v)}
+            value={[duration]}
+            onValueChange={([v]) => set("sleepDuration", v)}
             className="w-full"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
@@ -161,24 +85,22 @@ export default function SleepCard() {
             </span>
             <span className="text-xs text-muted-foreground">
               <span className={`font-semibold ${qualityColor}`}>
-                {values.quality}/10
+                {quality}/10
               </span>
               {" – "}
-              <span className={qualityColor}>
-                {qualityLabel(values.quality)}
-              </span>
+              <span className={qualityColor}>{qualityLabel(quality)}</span>
             </span>
           </div>
           <Slider
-            min={1}
+            min={0}
             max={10}
             step={1}
-            value={[values.quality]}
-            onValueChange={([v]) => set("quality", v)}
+            value={[quality]}
+            onValueChange={([v]) => set("sleepQuality", v)}
             className="w-full"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-            <span>1</span>
+            <span>0</span>
             <span>10</span>
           </div>
         </div>

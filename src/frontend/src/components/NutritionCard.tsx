@@ -1,114 +1,27 @@
 import { Slider } from "@/components/ui/slider";
 import { Salad } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useDailyHealth } from "../hooks/useDailyHealth";
 import { useLanguage } from "../hooks/useLanguage";
-import {
-  useGetCallerProfile,
-  useGetTodayHealthData,
-  useSaveHealthData,
-} from "../hooks/useQueries";
+import { useGetCallerProfile } from "../hooks/useQueries";
 import { t } from "../i18n";
-
-const STORAGE_KEY = "livspan-nutrition";
-
-function getTodayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
-
-function getTodayKeyPadded() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function loadToday(): { protein: number; veggies: number; water: number } {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { protein: 0, veggies: 0, water: 0 };
-    const parsed = JSON.parse(raw);
-    if (parsed.date !== getTodayKey())
-      return { protein: 0, veggies: 0, water: 0 };
-    return parsed.values;
-  } catch {
-    return { protein: 0, veggies: 0, water: 0 };
-  }
-}
-
-function saveToday(values: {
-  protein: number;
-  veggies: number;
-  water: number;
-}) {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ date: getTodayKey(), values }),
-  );
-}
 
 export default function NutritionCard() {
   const { lang } = useLanguage();
   const tr = t[lang];
   const { data: profile } = useGetCallerProfile();
+  const { health, setHealth } = useDailyHealth();
 
-  const weightKg = profile?.weightKg ?? 70;
+  const weightKg = (profile as any)?.weightKg ?? 70;
   const proteinTarget = Math.round(weightKg * 1.8);
 
-  const todayKey = getTodayKeyPadded();
-  const { data: backendHealth } = useGetTodayHealthData(todayKey);
-  const saveHealth = useSaveHealthData();
-
-  const [values, setValues] = useState(() => loadToday());
-  const initializedRef = useRef(false);
-
-  useEffect(() => {
-    if (backendHealth && !initializedRef.current) {
-      initializedRef.current = true;
-      const local = loadToday();
-      setValues({
-        protein: backendHealth.protein ?? local.protein,
-        veggies: backendHealth.veggies ?? local.veggies,
-        water: backendHealth.water ?? local.water,
-      });
-    }
-  }, [backendHealth]);
-
-  useEffect(() => {
-    saveToday(values);
-    const timer = setTimeout(() => {
-      saveHealth.mutate({
-        date: todayKey,
-        protein: values.protein,
-        veggies: values.veggies,
-        water: values.water,
-        sleepDuration: backendHealth?.sleepDuration ?? undefined,
-        sleepQuality: backendHealth?.sleepQuality ?? undefined,
-        sport: backendHealth?.sport ?? undefined,
-        intensity: backendHealth?.intensity ?? undefined,
-        movementDuration: backendHealth?.movementDuration ?? undefined,
-        systolic: backendHealth?.systolic ?? undefined,
-        diastolic: backendHealth?.diastolic ?? undefined,
-        restingHr: backendHealth?.restingHr ?? undefined,
-        fastingStart: backendHealth?.fastingStart ?? undefined,
-        fastingEnd: backendHealth?.fastingEnd ?? undefined,
-      });
-    }, 800);
-    return () => clearTimeout(timer);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: backendHealth used for merge only, intentionally stable
-    // eslint-disable-next-line
-  }, [values, backendHealth, saveHealth, todayKey]);
+  const { protein, veggies, water } = health;
 
   const set = (key: "protein" | "veggies" | "water", v: number) =>
-    setValues((prev) => ({ ...prev, [key]: v }));
+    setHealth({ [key]: v });
 
-  const proteinPct = Math.min(
-    100,
-    Math.round((values.protein / proteinTarget) * 100),
-  );
-  const veggiesPct = Math.min(100, Math.round((values.veggies / 400) * 100));
-  const waterPct = Math.min(100, Math.round((values.water / 2) * 100));
+  const proteinPct = Math.min(100, Math.round((protein / proteinTarget) * 100));
+  const veggiesPct = Math.min(100, Math.round((veggies / 400) * 100));
+  const waterPct = Math.min(100, Math.round((water / 2) * 100));
 
   return (
     <div className="glass-card rounded-2xl p-5">
@@ -139,7 +52,7 @@ export default function NutritionCard() {
                   proteinPct >= 100 ? "text-green-accent" : "text-foreground"
                 }`}
               >
-                {values.protein}g
+                {protein}g
               </span>
               {" / "}
               {proteinTarget}g
@@ -149,7 +62,7 @@ export default function NutritionCard() {
             min={0}
             max={proteinTarget * 1.5}
             step={1}
-            value={[values.protein]}
+            value={[protein]}
             onValueChange={([v]) => set("protein", v)}
             className="w-full"
           />
@@ -173,7 +86,7 @@ export default function NutritionCard() {
                   veggiesPct >= 100 ? "text-green-accent" : "text-foreground"
                 }`}
               >
-                {values.veggies}g
+                {veggies}g
               </span>
               {" / 400g"}
             </span>
@@ -182,7 +95,7 @@ export default function NutritionCard() {
             min={0}
             max={600}
             step={10}
-            value={[values.veggies]}
+            value={[veggies]}
             onValueChange={([v]) => set("veggies", v)}
             className="w-full"
           />
@@ -203,10 +116,10 @@ export default function NutritionCard() {
             <span className="text-xs text-muted-foreground">
               <span
                 className={`font-semibold ${
-                  values.water >= 2 ? "text-green-accent" : "text-foreground"
+                  water >= 2 ? "text-green-accent" : "text-foreground"
                 }`}
               >
-                {values.water.toFixed(1)}L
+                {water.toFixed(1)}L
               </span>
               {" / min. 2L"}
             </span>
@@ -215,7 +128,7 @@ export default function NutritionCard() {
             min={0}
             max={4}
             step={0.1}
-            value={[values.water]}
+            value={[water]}
             onValueChange={([v]) =>
               set("water", Number.parseFloat(v.toFixed(1)))
             }

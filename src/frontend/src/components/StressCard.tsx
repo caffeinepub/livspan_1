@@ -1,52 +1,8 @@
 import { Slider } from "@/components/ui/slider";
 import { HeartPulse } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useDailyHealth } from "../hooks/useDailyHealth";
 import { useLanguage } from "../hooks/useLanguage";
-import { useGetTodayHealthData, useSaveHealthData } from "../hooks/useQueries";
 import { t } from "../i18n";
-
-const STORAGE_KEY = "livspan-stress";
-
-function getTodayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
-
-function getTodayKeyPadded() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function loadToday(): {
-  systolic: number;
-  diastolic: number;
-  restingHr: number;
-} {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { systolic: 120, diastolic: 80, restingHr: 65 };
-    const parsed = JSON.parse(raw);
-    if (parsed.date !== getTodayKey())
-      return { systolic: 120, diastolic: 80, restingHr: 65 };
-    return parsed.values;
-  } catch {
-    return { systolic: 120, diastolic: 80, restingHr: 65 };
-  }
-}
-
-function saveToday(values: {
-  systolic: number;
-  diastolic: number;
-  restingHr: number;
-}) {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ date: getTodayKey(), values }),
-  );
-}
 
 function bpCategory(systolic: number, diastolic: number, lang: "de" | "en") {
   if (systolic < 120 && diastolic < 80)
@@ -82,56 +38,15 @@ function hrColor(hr: number) {
 export default function StressCard() {
   const { lang } = useLanguage();
   const tr = t[lang];
+  const { health, setHealth } = useDailyHealth();
 
-  const todayKey = getTodayKeyPadded();
-  const { data: backendHealth } = useGetTodayHealthData(todayKey);
-  const saveHealth = useSaveHealthData();
-
-  const [values, setValues] = useState(() => loadToday());
-  const initializedRef = useRef(false);
-
-  useEffect(() => {
-    if (backendHealth && !initializedRef.current) {
-      initializedRef.current = true;
-      const local = loadToday();
-      setValues({
-        systolic: backendHealth.systolic ?? local.systolic,
-        diastolic: backendHealth.diastolic ?? local.diastolic,
-        restingHr: backendHealth.restingHr ?? local.restingHr,
-      });
-    }
-  }, [backendHealth]);
-
-  useEffect(() => {
-    saveToday(values);
-    const timer = setTimeout(() => {
-      saveHealth.mutate({
-        date: todayKey,
-        systolic: values.systolic,
-        diastolic: values.diastolic,
-        restingHr: values.restingHr,
-        sleepDuration: backendHealth?.sleepDuration ?? undefined,
-        sleepQuality: backendHealth?.sleepQuality ?? undefined,
-        protein: backendHealth?.protein ?? undefined,
-        veggies: backendHealth?.veggies ?? undefined,
-        water: backendHealth?.water ?? undefined,
-        sport: backendHealth?.sport ?? undefined,
-        intensity: backendHealth?.intensity ?? undefined,
-        movementDuration: backendHealth?.movementDuration ?? undefined,
-        fastingStart: backendHealth?.fastingStart ?? undefined,
-        fastingEnd: backendHealth?.fastingEnd ?? undefined,
-      });
-    }, 800);
-    return () => clearTimeout(timer);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: backendHealth used for merge only, intentionally stable
-    // eslint-disable-next-line
-  }, [values, backendHealth, saveHealth, todayKey]);
+  const { systolic, diastolic, restingHr } = health;
 
   const set = (key: "systolic" | "diastolic" | "restingHr", v: number) =>
-    setValues((prev) => ({ ...prev, [key]: v }));
+    setHealth({ [key]: v });
 
-  const bpColorClass = bpColor(values.systolic, values.diastolic);
-  const hrColorClass = hrColor(values.restingHr);
+  const bpColorClass = bpColor(systolic, diastolic);
+  const hrColorClass = hrColor(restingHr);
 
   return (
     <div className="glass-card rounded-2xl p-5">
@@ -158,20 +73,20 @@ export default function StressCard() {
             </span>
             <span className="text-xs text-muted-foreground">
               <span className={`font-semibold ${bpColorClass}`}>
-                {values.systolic} mmHg
+                {systolic} mmHg
               </span>
             </span>
           </div>
           <Slider
-            min={80}
+            min={0}
             max={200}
             step={1}
-            value={[values.systolic]}
+            value={[systolic]}
             onValueChange={([v]) => set("systolic", v)}
             className="w-full"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-            <span>80</span>
+            <span>0</span>
             <span className="text-rose-400/70">
               {tr.stress_bp_target}: &lt;120
             </span>
@@ -187,24 +102,24 @@ export default function StressCard() {
             </span>
             <span className="text-xs text-muted-foreground">
               <span className={`font-semibold ${bpColorClass}`}>
-                {values.diastolic} mmHg
+                {diastolic} mmHg
               </span>
               {" – "}
               <span className={bpColorClass}>
-                {bpCategory(values.systolic, values.diastolic, lang)}
+                {bpCategory(systolic, diastolic, lang)}
               </span>
             </span>
           </div>
           <Slider
-            min={50}
+            min={0}
             max={130}
             step={1}
-            value={[values.diastolic]}
+            value={[diastolic]}
             onValueChange={([v]) => set("diastolic", v)}
             className="w-full"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-            <span>50</span>
+            <span>0</span>
             <span className="text-rose-400/70">
               {tr.stress_bp_target}: &lt;80
             </span>
@@ -220,24 +135,24 @@ export default function StressCard() {
             </span>
             <span className="text-xs text-muted-foreground">
               <span className={`font-semibold ${hrColorClass}`}>
-                {values.restingHr} bpm
+                {restingHr} bpm
               </span>
               {" – "}
               <span className={hrColorClass}>
-                {hrCategory(values.restingHr, lang)}
+                {hrCategory(restingHr, lang)}
               </span>
             </span>
           </div>
           <Slider
-            min={30}
+            min={0}
             max={120}
             step={1}
-            value={[values.restingHr]}
+            value={[restingHr]}
             onValueChange={([v]) => set("restingHr", v)}
             className="w-full"
           />
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-            <span>30</span>
+            <span>0</span>
             <span className="text-rose-400/70">
               {tr.stress_hr_target}: 50–70
             </span>
@@ -249,7 +164,7 @@ export default function StressCard() {
         <div className="pt-1 border-t border-border/30 flex items-center justify-between">
           <div className="text-center">
             <p className={`text-sm font-bold ${bpColorClass}`}>
-              {values.systolic}/{values.diastolic}
+              {systolic}/{diastolic}
             </p>
             <p className="text-[10px] text-muted-foreground">
               {tr.stress_bp_short}
@@ -258,7 +173,7 @@ export default function StressCard() {
           <div className="w-px h-8 bg-border/30" />
           <div className="text-center">
             <p className={`text-sm font-bold ${hrColorClass}`}>
-              {values.restingHr} bpm
+              {restingHr} bpm
             </p>
             <p className="text-[10px] text-muted-foreground">
               {tr.stress_hr_short}
@@ -267,7 +182,7 @@ export default function StressCard() {
           <div className="w-px h-8 bg-border/30" />
           <div className="text-center">
             <p className={`text-xs font-semibold ${bpColorClass}`}>
-              {bpCategory(values.systolic, values.diastolic, lang)}
+              {bpCategory(systolic, diastolic, lang)}
             </p>
             <p className="text-[10px] text-muted-foreground">
               {tr.stress_status}

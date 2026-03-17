@@ -1,5 +1,6 @@
 import { AlertTriangle, Flame } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
+import { useDailyHealth } from "../hooks/useDailyHealth";
 import { useLanguage } from "../hooks/useLanguage";
 import { useGetCallerProfile, useSaveScoreEntry } from "../hooks/useQueries";
 import { t } from "../i18n";
@@ -9,19 +10,8 @@ function getTodayKey() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
-function loadDailyData<T>(key: string, defaultValues: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return defaultValues;
-    const parsed = JSON.parse(raw);
-    if (parsed.date !== getTodayKey()) return defaultValues;
-    return parsed.values ?? defaultValues;
-  } catch {
-    return defaultValues;
-  }
-}
-
 function calcSleepScore(duration: number, quality: number) {
+  if (duration === 0 && quality === 0) return 0;
   const durationScore =
     duration >= 9 ? 100 : duration >= 7 ? 100 : (duration / 7) * 100;
   const qualityScore = (quality / 10) * 100;
@@ -60,6 +50,7 @@ function calcStressScore(
   diastolic: number,
   restingHr: number,
 ) {
+  if (systolic === 0 && diastolic === 0 && restingHr === 0) return 0;
   const systolicScore = Math.max(0, 100 - Math.abs(systolic - 115) * 1.5);
   const diastolicScore = Math.max(0, 100 - Math.abs(diastolic - 75) * 2);
   const hrScore = Math.max(0, 100 - Math.abs(restingHr - 55) * 1.5);
@@ -127,7 +118,7 @@ function ScoreRing({ score, category }: { score: number; category: string }) {
     >
       <svg
         role="img"
-        aria-label={`Longevity score: ${score}`}
+        aria-label={`LivSpan score: ${score}`}
         width={RING_SIZE}
         height={RING_SIZE}
         style={{ transform: "rotate(-90deg)" }}
@@ -170,74 +161,43 @@ export default function LongevityScoreCard() {
   const tr = t[lang];
   const { data: profile } = useGetCallerProfile();
   const saveScore = useSaveScoreEntry();
+  const { health } = useDailyHealth();
 
   const weightKg = (profile as any)?.weightKg ?? 70;
 
-  const sleepValues = loadDailyData("livspan-sleep", {
-    duration: 0,
-    quality: 0,
-  });
-  const nutritionValues = loadDailyData("livspan-nutrition", {
-    protein: 0,
-    veggies: 0,
-    water: 0,
-  });
-  const stressValues = loadDailyData("livspan-stress", {
-    systolic: 0,
-    diastolic: 0,
-    restingHr: 0,
-  });
-  const movementValues = loadDailyData("livspan-movement", {
-    sport: "",
-    intensity: 0,
-    duration: 0,
-  });
+  const {
+    sleepDuration,
+    sleepQuality,
+    protein,
+    veggies,
+    water,
+    movementDuration,
+    intensity,
+    systolic,
+    diastolic,
+    restingHr,
+    fastingStart,
+    fastingEnd,
+  } = health;
 
-  const fastingSchedule = useMemo(() => {
-    try {
-      const raw = localStorage.getItem("livspan-fasting");
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (parsed.startTime && parsed.endTime)
-        return parsed as { startTime: string; endTime: string };
-      return null;
-    } catch {
-      return null;
-    }
-  }, []);
+  const hasSleep = sleepDuration > 0 || sleepQuality > 0;
+  const hasNutrition = protein > 0 || veggies > 0 || water > 0;
+  const hasStress = systolic > 0;
+  const hasMovement = movementDuration > 0;
+  const hasFasting = !!fastingStart && !!fastingEnd;
 
-  const hasSleep = sleepValues.duration > 0 || sleepValues.quality > 0;
-  const hasNutrition =
-    nutritionValues.protein > 0 ||
-    nutritionValues.veggies > 0 ||
-    nutritionValues.water > 0;
-  const hasStress = stressValues.systolic > 0;
-  const hasMovement = movementValues.duration > 0;
-  const hasFasting = fastingSchedule !== null;
-
-  const sleepScore = hasSleep
-    ? calcSleepScore(sleepValues.duration, sleepValues.quality)
-    : 0;
+  const sleepScore = hasSleep ? calcSleepScore(sleepDuration, sleepQuality) : 0;
   const nutritionScore = hasNutrition
-    ? calcNutritionScore(
-        nutritionValues.protein,
-        nutritionValues.veggies,
-        nutritionValues.water,
-        weightKg,
-      )
+    ? calcNutritionScore(protein, veggies, water, weightKg)
     : 0;
   const movementScore = hasMovement
-    ? calcMovementScore(movementValues.duration, movementValues.intensity)
+    ? calcMovementScore(movementDuration, intensity)
     : 0;
   const stressScore = hasStress
-    ? calcStressScore(
-        stressValues.systolic,
-        stressValues.diastolic,
-        stressValues.restingHr,
-      )
+    ? calcStressScore(systolic, diastolic, restingHr)
     : 0;
   const fastingScore = hasFasting
-    ? calcFastingScore(fastingSchedule!.startTime, fastingSchedule!.endTime)
+    ? calcFastingScore(fastingStart!, fastingEnd!)
     : 0;
 
   const totalScore = Math.round(

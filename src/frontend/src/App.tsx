@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { Loader2 } from "lucide-react";
+import { DailyHealthProvider } from "./hooks/useDailyHealth";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
 import DashboardPage from "./pages/DashboardPage";
 import LandingPage from "./pages/LandingPage";
@@ -24,9 +25,9 @@ export default function App() {
   }
 
   return (
-    <>
+    <DailyHealthProvider>
       {isAuthenticated ? <DashboardPage /> : <LandingPage />}
       <Toaster position="top-right" />
-    </>
+    </DailyHealthProvider>
   );
 }
