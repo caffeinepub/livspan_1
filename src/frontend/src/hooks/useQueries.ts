@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { RoutineWithStatus } from "../backend.d";
+import type { RoutineWithStatus, UserProfile } from "../backend.d";
 import { useActor } from "./useActor";
 
 export function useGetRoutines() {
@@ -94,5 +94,29 @@ export function useMarkRoutineUndone() {
       if (result.__kind__ === "err") throw new Error(result.err);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["routines"] }),
+  });
+}
+
+export function useGetCallerProfile() {
+  const { actor, isFetching: actorFetching } = useActor();
+  return useQuery<UserProfile | null>({
+    queryKey: ["callerProfile"],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getCallerUserProfile();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+export function useSaveProfile() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (profile: UserProfile) => {
+      if (!actor) throw new Error("Not connected");
+      await actor.saveCallerUserProfile(profile);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["callerProfile"] }),
   });
 }

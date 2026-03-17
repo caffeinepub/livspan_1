@@ -17,9 +17,16 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { RoutineWithStatus } from "../backend.d";
+import FastingCard from "../components/FastingCard";
+import MovementCard from "../components/MovementCard";
+import NutritionCard from "../components/NutritionCard";
+import PersonalDataCard from "../components/PersonalDataCard";
 import PlaceholderCard from "../components/PlaceholderCard";
 import RoutineModal from "../components/RoutineModal";
+import SleepCard from "../components/SleepCard";
+import StressCard from "../components/StressCard";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useLanguage } from "../hooks/useLanguage";
 import {
   useCreateRoutine,
   useDeleteRoutine,
@@ -28,14 +35,15 @@ import {
   useMarkRoutineUndone,
   useUpdateRoutine,
 } from "../hooks/useQueries";
+import { t } from "../i18n";
 
 function getTodayString() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
-function formatDateLabel(date: Date) {
-  return date.toLocaleDateString("en-US", {
+function formatDateLabel(date: Date, lang: "de" | "en") {
+  return date.toLocaleDateString(lang === "de" ? "de-DE" : "en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -47,15 +55,10 @@ function shortenPrincipal(principal: string) {
   return `${principal.slice(0, 6)}...${principal.slice(-4)}`;
 }
 
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "morning";
-  if (h < 17) return "afternoon";
-  return "evening";
-}
-
 export default function DashboardPage() {
   const { clear, identity } = useInternetIdentity();
+  const { lang, setLang } = useLanguage();
+  const tr = t[lang];
   const queryClient = useQueryClient();
   const { data: routines = [], isLoading } = useGetRoutines();
 
@@ -78,6 +81,13 @@ export default function DashboardPage() {
     a.time.localeCompare(b.time),
   );
 
+  function getGreetingKey() {
+    const h = new Date().getHours();
+    if (h < 12) return "greeting_morning";
+    if (h < 17) return "greeting_afternoon";
+    return "greeting_evening";
+  }
+
   const handleLogout = async () => {
     await clear();
     queryClient.clear();
@@ -96,24 +106,24 @@ export default function DashboardPage() {
           time,
           description,
         });
-        toast.success("Routine updated");
+        toast.success(tr.routine_updated);
       } else {
         await createRoutine.mutateAsync({ title, time, description });
-        toast.success("Routine created");
+        toast.success(tr.routine_created);
       }
       setModalOpen(false);
       setEditingRoutine(null);
     } catch {
-      toast.error("Failed to save routine");
+      toast.error(tr.routine_save_error);
     }
   };
 
   const handleDelete = async (routine: RoutineWithStatus) => {
     try {
       await deleteRoutine.mutateAsync(routine.id);
-      toast.success("Routine deleted");
+      toast.success(tr.routine_deleted);
     } catch {
-      toast.error("Failed to delete routine");
+      toast.error(tr.routine_delete_error);
     }
   };
 
@@ -125,7 +135,7 @@ export default function DashboardPage() {
         await markDone.mutateAsync({ id: routine.id, date: todayStr });
       }
     } catch {
-      toast.error("Failed to update routine");
+      toast.error(tr.routine_update_error);
     }
   };
 
@@ -162,7 +172,7 @@ export default function DashboardPage() {
     >
       {/* Announcement bar */}
       <div className="w-full py-2 px-4 text-center text-xs text-muted-foreground border-b border-border/30 bg-muted/20">
-        LivSpan — Premium Wellness &amp; Longevity Platform
+        {tr.announcement}
       </div>
 
       {/* Navbar */}
@@ -183,19 +193,46 @@ export default function DashboardPage() {
               className="text-green-accent font-semibold"
               data-ocid="dashboard.tab"
             >
-              Dashboard
+              {tr.nav_dashboard}
             </span>
             <span className="text-muted-foreground hover:text-foreground transition-colors cursor-default">
-              Journeys
+              {tr.nav_journeys}
             </span>
             <span className="text-muted-foreground hover:text-foreground transition-colors cursor-default">
-              Library
+              {tr.nav_library}
             </span>
             <span className="text-muted-foreground hover:text-foreground transition-colors cursor-default">
-              Community
+              {tr.nav_community}
             </span>
           </nav>
           <div className="flex items-center gap-3">
+            {/* Language toggle */}
+            <div className="flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setLang("de")}
+                className={`px-3 py-1.5 transition-colors ${
+                  lang === "de"
+                    ? "bg-green-accent/20 text-green-accent"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-ocid="dashboard.toggle"
+              >
+                DE
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang("en")}
+                className={`px-3 py-1.5 transition-colors ${
+                  lang === "en"
+                    ? "bg-green-accent/20 text-green-accent"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-ocid="dashboard.toggle"
+              >
+                EN
+              </button>
+            </div>
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/40">
               <Wallet className="w-3.5 h-3.5 text-green-accent" />
               <span className="text-xs text-muted-foreground font-mono">
@@ -209,7 +246,7 @@ export default function DashboardPage() {
               className="rounded-full border-border/50 text-muted-foreground hover:text-foreground text-xs"
               data-ocid="dashboard.secondary_button"
             >
-              Disconnect
+              {tr.disconnect}
             </Button>
           </div>
         </div>
@@ -223,10 +260,10 @@ export default function DashboardPage() {
           transition={{ duration: 0.4 }}
         >
           <p className="text-muted-foreground text-sm mb-1">
-            Good {getGreeting()},
+            {tr[getGreetingKey()]},
           </p>
           <h1 className="font-display font-bold text-3xl md:text-4xl text-foreground">
-            Welcome back,{" "}
+            {tr.welcome_back}{" "}
             <span
               style={{
                 background:
@@ -239,7 +276,7 @@ export default function DashboardPage() {
             </span>
           </h1>
           <p className="text-muted-foreground text-sm mt-2">
-            Track your daily routines and optimize your longevity.
+            {tr.hero_sub_dashboard}
           </p>
         </motion.div>
       </section>
@@ -247,7 +284,7 @@ export default function DashboardPage() {
       {/* Dashboard content */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-6 pb-12">
         <h2 className="font-display font-semibold text-lg text-foreground mb-5">
-          Dashboard
+          {tr.nav_dashboard}
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Daily Routines — left wide column */}
@@ -262,7 +299,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h3 className="font-display font-semibold text-lg text-foreground">
-                    Daily Routines
+                    {tr.daily_routines}
                   </h3>
                   <div className="flex items-center gap-2 mt-1">
                     <button
@@ -274,8 +311,8 @@ export default function DashboardPage() {
                       <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
                     <span className="text-sm text-muted-foreground">
-                      {isToday ? "Today, " : ""}
-                      {formatDateLabel(viewDate)}
+                      {isToday ? tr.today : ""}
+                      {formatDateLabel(viewDate, lang)}
                     </span>
                     <button
                       type="button"
@@ -294,7 +331,7 @@ export default function DashboardPage() {
                   data-ocid="routine.primary_button"
                 >
                   <Plus className="w-4 h-4 mr-1.5" />
-                  Add Routine
+                  {tr.add_routine}
                 </Button>
               </div>
 
@@ -317,11 +354,10 @@ export default function DashboardPage() {
                     <Plus className="w-7 h-7 text-green-accent/60" />
                   </div>
                   <p className="text-foreground font-medium mb-1.5">
-                    No routines yet
+                    {tr.no_routines}
                   </p>
                   <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                    Start building your longevity practice. Add your first daily
-                    routine.
+                    {tr.no_routines_sub}
                   </p>
                   <Button
                     onClick={openCreate}
@@ -329,7 +365,7 @@ export default function DashboardPage() {
                     data-ocid="routine.primary_button"
                   >
                     <Plus className="w-4 h-4 mr-1.5" />
-                    Add First Routine
+                    {tr.add_first_routine}
                   </Button>
                 </motion.div>
               ) : (
@@ -350,6 +386,8 @@ export default function DashboardPage() {
                           onEdit={() => openEdit(routine)}
                           onDelete={() => handleDelete(routine)}
                           isToday={isToday}
+                          markDoneLabel={tr.mark_done}
+                          markUndoneLabel={tr.mark_undone}
                         />
                       ))}
                     </AnimatePresence>
@@ -359,27 +397,33 @@ export default function DashboardPage() {
             </div>
           </motion.div>
 
-          {/* Right sidebar — placeholder cards */}
+          {/* Right sidebar */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
             className="flex flex-col gap-4"
           >
+            <PersonalDataCard />
+            <NutritionCard />
+            <SleepCard />
+            <StressCard />
+            <FastingCard />
+            <MovementCard />
             <PlaceholderCard
-              title="Biomarkers"
+              title={tr.biomarkers_title}
               icon={<Activity className="w-5 h-5" />}
-              description="Track HRV, blood glucose, VO2 max, and other key health biomarkers to understand your longevity score."
+              description={tr.biomarkers_desc}
             />
             <PlaceholderCard
-              title="Recent Insights"
+              title={tr.insights_title}
               icon={<BookOpen className="w-5 h-5" />}
-              description="AI-powered insights based on your routine consistency and biomarker trends."
+              description={tr.insights_desc}
             />
             <PlaceholderCard
-              title="Upcoming Journey"
+              title={tr.journeys_title}
               icon={<MapPin className="w-5 h-5" />}
-              description="Science-backed longevity programs tailored to your health profile and goals."
+              description={tr.journeys_desc}
             />
           </motion.div>
         </div>
@@ -432,6 +476,8 @@ interface RoutineItemProps {
   onEdit: () => void;
   onDelete: () => void;
   isToday: boolean;
+  markDoneLabel: string;
+  markUndoneLabel: string;
 }
 
 function RoutineItem({
@@ -441,6 +487,8 @@ function RoutineItem({
   onEdit,
   onDelete,
   isToday,
+  markDoneLabel,
+  markUndoneLabel,
 }: RoutineItemProps) {
   return (
     <motion.div
@@ -485,7 +533,7 @@ function RoutineItem({
                   ? "border-green-accent bg-green-accent"
                   : "border-border/60 hover:border-green-accent/70"
               } disabled:cursor-not-allowed disabled:opacity-50`}
-              aria-label={routine.done ? "Mark as undone" : "Mark as done"}
+              aria-label={routine.done ? markUndoneLabel : markDoneLabel}
               data-ocid={`routine.checkbox.${index}`}
             >
               {routine.done && (
@@ -504,7 +552,7 @@ function RoutineItem({
 
             <div className="flex-1 min-w-0">
               <p
-                className={`font-medium text-sm leading-snug truncate ${
+                className={`font-medium text-sm leading-snug ${
                   routine.done
                     ? "line-through text-muted-foreground"
                     : "text-foreground"
@@ -513,7 +561,7 @@ function RoutineItem({
                 {routine.title}
               </p>
               {routine.description && (
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {routine.description}
                 </p>
               )}

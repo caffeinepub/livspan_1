@@ -20,7 +20,14 @@ export interface RoutineWithStatus {
   'time' : string,
   'description' : string,
 }
-export interface UserProfile { 'name' : string }
+export interface UserProfile {
+  'heightCm' : [] | [bigint],
+  'bodyFatPct' : [] | [number],
+  'birthYear' : [] | [bigint],
+  'name' : string,
+  'weightKg' : [] | [number],
+  'gender' : [] | [string],
+}
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };

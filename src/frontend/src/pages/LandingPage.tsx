@@ -2,28 +2,32 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Shield, TrendingUp, Wallet, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
-
-const features = [
-  {
-    icon: <TrendingUp className="w-5 h-5" />,
-    title: "Daily Routines",
-    desc: "Build powerful habits with time-tracked daily routines that reset each morning.",
-  },
-  {
-    icon: <Shield className="w-5 h-5" />,
-    title: "Biomarker Tracking",
-    desc: "Monitor key health metrics and visualize your longevity trajectory over time.",
-  },
-  {
-    icon: <Zap className="w-5 h-5" />,
-    title: "Longevity Journeys",
-    desc: "Science-backed programs to extend healthspan, guided by expert protocols.",
-  },
-];
+import { useLanguage } from "../hooks/useLanguage";
+import { t } from "../i18n";
 
 export default function LandingPage() {
   const { login, loginStatus } = useInternetIdentity();
+  const { lang, setLang } = useLanguage();
+  const tr = t[lang];
   const isLoggingIn = loginStatus === "logging-in";
+
+  const features = [
+    {
+      icon: <TrendingUp className="w-5 h-5" />,
+      title: tr.feature_routines_title,
+      desc: tr.feature_routines_desc,
+    },
+    {
+      icon: <Shield className="w-5 h-5" />,
+      title: tr.feature_biomarker_title,
+      desc: tr.feature_biomarker_desc,
+    },
+    {
+      icon: <Zap className="w-5 h-5" />,
+      title: tr.feature_journeys_title,
+      desc: tr.feature_journeys_desc,
+    },
+  ];
 
   return (
     <div
@@ -35,7 +39,7 @@ export default function LandingPage() {
     >
       {/* Announcement bar */}
       <div className="w-full py-2 px-4 text-center text-xs text-muted-foreground border-b border-border/30 bg-muted/20">
-        LivSpan — A premium wellness &amp; longevity platform built on Web3
+        {tr.announcement}
       </div>
 
       {/* Nav */}
@@ -52,35 +56,64 @@ export default function LandingPage() {
             </span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-            <span className="text-green-accent font-medium">Home</span>
+            <span className="text-green-accent font-medium">{tr.nav_home}</span>
             <span className="hover:text-foreground transition-colors cursor-default">
-              Journeys
+              {tr.nav_journeys}
             </span>
             <span className="hover:text-foreground transition-colors cursor-default">
-              Library
+              {tr.nav_library}
             </span>
             <span className="hover:text-foreground transition-colors cursor-default">
-              Community
+              {tr.nav_community}
             </span>
           </nav>
-          <Button
-            onClick={login}
-            disabled={isLoggingIn}
-            className="rounded-full px-5 bg-gold text-primary-foreground hover:opacity-90 font-semibold text-sm"
-            data-ocid="landing.primary_button"
-          >
-            {isLoggingIn ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Connecting...
-              </>
-            ) : (
-              <>
-                <Wallet className="w-4 h-4 mr-2" />
-                Connect Wallet
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Language toggle */}
+            <div className="flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setLang("de")}
+                className={`px-3 py-1.5 transition-colors ${
+                  lang === "de"
+                    ? "bg-green-accent/20 text-green-accent"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-ocid="landing.toggle"
+              >
+                DE
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang("en")}
+                className={`px-3 py-1.5 transition-colors ${
+                  lang === "en"
+                    ? "bg-green-accent/20 text-green-accent"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-ocid="landing.toggle"
+              >
+                EN
+              </button>
+            </div>
+            <Button
+              onClick={login}
+              disabled={isLoggingIn}
+              className="rounded-full px-5 bg-gold text-primary-foreground hover:opacity-90 font-semibold text-sm"
+              data-ocid="landing.primary_button"
+            >
+              {isLoggingIn ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {tr.connecting}
+                </>
+              ) : (
+                <>
+                  <Wallet className="w-4 h-4 mr-2" />
+                  {tr.connect_wallet}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -94,11 +127,11 @@ export default function LandingPage() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-green-accent/30 bg-green-accent/10 text-green-accent text-xs font-medium mb-8">
             <Zap className="w-3.5 h-3.5" />
-            Powered by the LivSpan Token
+            {tr.tagline}
           </div>
 
           <h1 className="font-display font-bold text-5xl md:text-6xl lg:text-7xl text-foreground leading-tight mb-6">
-            Optimize Your Lifespan.
+            {tr.hero_title_1}
             <br />
             <span
               style={{
@@ -108,14 +141,12 @@ export default function LandingPage() {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              Live Better, Longer.
+              {tr.hero_title_2}
             </span>
           </h1>
 
           <p className="text-muted-foreground text-lg leading-relaxed max-w-xl mx-auto mb-10">
-            LivSpan is the world's first Web3-native wellness platform combining
-            daily habit tracking, biomarker analysis, and longevity science —
-            authenticated securely via your wallet.
+            {tr.hero_sub}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -129,12 +160,12 @@ export default function LandingPage() {
               {isLoggingIn ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Connecting...
+                  {tr.connecting}
                 </>
               ) : (
                 <>
                   <Wallet className="w-5 h-5 mr-2" />
-                  Connect Wallet to Start
+                  {tr.connect_wallet_start}
                 </>
               )}
             </Button>

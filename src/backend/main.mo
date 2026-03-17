@@ -4,46 +4,33 @@ import Nat "mo:core/Nat";
 import Text "mo:core/Text";
 import Array "mo:core/Array";
 import Time "mo:core/Time";
+import Float "mo:core/Float";
 import Iter "mo:core/Iter";
 import Order "mo:core/Order";
 import Principal "mo:core/Principal";
-import Runtime "mo:core/Runtime";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Runtime "mo:core/Runtime";
+
+
 
 actor {
   // Initialize the access control state
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  // User Profile Type
+  // User Profile Types
   public type UserProfile = {
     name : Text;
+    birthYear : ?Nat;
+    gender : ?Text;
+    heightCm : ?Nat;
+    weightKg : ?Float;
+    bodyFatPct : ?Float;
   };
 
+  // User state
   let userProfiles = Map.empty<Principal, UserProfile>();
-
-  // User Profile Functions
-  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can access profiles");
-    };
-    userProfiles.get(caller);
-  };
-
-  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own profile");
-    };
-    userProfiles.get(user);
-  };
-
-  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
-    userProfiles.add(caller, profile);
-  };
 
   // Routine Types
   public type Routine = {
@@ -82,10 +69,32 @@ actor {
     owner : Principal;
   };
 
-  // State
+  // Routine state
   let routines = Map.empty<Nat, RoutineInternal>();
   let completions = Map.empty<Principal, Map.Map<Nat, Text>>();
   var nextRoutineId = 0;
+
+  // User Profile Functions
+  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access profiles");
+    };
+    userProfiles.get(caller);
+  };
+
+  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own profile");
+    };
+    userProfiles.get(user);
+  };
+
+  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+    userProfiles.add(caller, profile);
+  };
 
   // Routine Functions
   public shared ({ caller }) func createRoutine(title : Text, time : Text, description : Text) : async Result {

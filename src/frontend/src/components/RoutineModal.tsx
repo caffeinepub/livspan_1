@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import type { RoutineWithStatus } from "../backend.d";
+import { useLanguage } from "../hooks/useLanguage";
+import { t } from "../i18n";
 
 interface Props {
   open: boolean;
@@ -27,6 +29,9 @@ export default function RoutineModal({
   routine,
   isSaving,
 }: Props) {
+  const { lang } = useLanguage();
+  const tr = t[lang];
+
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("08:00");
   const [description, setDescription] = useState("");
@@ -53,7 +58,7 @@ export default function RoutineModal({
       >
         <DialogHeader>
           <DialogTitle className="font-display text-lg text-foreground">
-            {routine ? "Edit Routine" : "New Routine"}
+            {routine ? tr.edit_routine : tr.new_routine}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
@@ -62,13 +67,13 @@ export default function RoutineModal({
               htmlFor="routine-title"
               className="text-muted-foreground text-sm"
             >
-              Title
+              {tr.title_label}
             </Label>
             <Input
               id="routine-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Morning Meditation"
+              placeholder={tr.title_placeholder}
               className="bg-input border-border/60 focus:ring-green-accent focus:border-green-accent"
               required
               data-ocid="routine.input"
@@ -79,7 +84,7 @@ export default function RoutineModal({
               htmlFor="routine-time"
               className="text-muted-foreground text-sm"
             >
-              Time (Uhrzeit)
+              {tr.time_label}
             </Label>
             <Input
               id="routine-time"
@@ -96,13 +101,13 @@ export default function RoutineModal({
               htmlFor="routine-desc"
               className="text-muted-foreground text-sm"
             >
-              Description
+              {tr.description_label}
             </Label>
             <Textarea
               id="routine-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description (optional)"
+              placeholder={tr.description_placeholder}
               rows={3}
               className="bg-input border-border/60 focus:ring-green-accent focus:border-green-accent resize-none"
               data-ocid="routine.textarea"
@@ -116,7 +121,7 @@ export default function RoutineModal({
               className="border-border/60 text-muted-foreground hover:text-foreground"
               data-ocid="routine.cancel_button"
             >
-              Cancel
+              {tr.cancel}
             </Button>
             <Button
               type="submit"
@@ -124,7 +129,7 @@ export default function RoutineModal({
               className="bg-gold text-primary-foreground hover:opacity-90 font-semibold"
               data-ocid="routine.save_button"
             >
-              {isSaving ? "Saving..." : "Save Routine"}
+              {isSaving ? tr.saving : tr.save_routine}
             </Button>
           </DialogFooter>
         </form>

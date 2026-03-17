@@ -14,7 +14,14 @@ export const UserRole = IDL.Variant({
   'guest' : IDL.Null,
 });
 export const Result = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
-export const UserProfile = IDL.Record({ 'name' : IDL.Text });
+export const UserProfile = IDL.Record({
+  'heightCm' : IDL.Opt(IDL.Nat),
+  'bodyFatPct' : IDL.Opt(IDL.Float64),
+  'birthYear' : IDL.Opt(IDL.Nat),
+  'name' : IDL.Text,
+  'weightKg' : IDL.Opt(IDL.Float64),
+  'gender' : IDL.Opt(IDL.Text),
+});
 export const RoutineWithStatus = IDL.Record({
   'id' : IDL.Nat,
   'title' : IDL.Text,
@@ -62,7 +69,14 @@ export const idlFactory = ({ IDL }) => {
     'guest' : IDL.Null,
   });
   const Result = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
-  const UserProfile = IDL.Record({ 'name' : IDL.Text });
+  const UserProfile = IDL.Record({
+    'heightCm' : IDL.Opt(IDL.Nat),
+    'bodyFatPct' : IDL.Opt(IDL.Float64),
+    'birthYear' : IDL.Opt(IDL.Nat),
+    'name' : IDL.Text,
+    'weightKg' : IDL.Opt(IDL.Float64),
+    'gender' : IDL.Opt(IDL.Text),
+  });
   const RoutineWithStatus = IDL.Record({
     'id' : IDL.Nat,
     'title' : IDL.Text,

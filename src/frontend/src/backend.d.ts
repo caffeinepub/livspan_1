@@ -23,7 +23,12 @@ export type Result = {
     err: string;
 };
 export interface UserProfile {
+    heightCm?: bigint;
+    bodyFatPct?: number;
+    birthYear?: bigint;
     name: string;
+    weightKg?: number;
+    gender?: string;
 }
 export enum UserRole {
     admin = "admin",
