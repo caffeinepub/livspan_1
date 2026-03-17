@@ -409,12 +409,12 @@ export default function DashboardPage() {
           >
             <LongevityScoreCard />
             <LongevityScoreHistoryCard />
-            <PersonalDataCard />
-            <NutritionCard />
             <SleepCard />
-            <StressCard />
             <FastingCard />
+            <NutritionCard />
             <MovementCard />
+            <StressCard />
+            <PersonalDataCard />
             <DiaryCard />
             <PlaceholderCard
               title={tr.biomarkers_title}
