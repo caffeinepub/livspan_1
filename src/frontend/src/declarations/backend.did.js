@@ -8,12 +8,28 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const Result = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
-export const Result = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
+export const DailyHealthData = IDL.Record({
+  'sleepQuality' : IDL.Opt(IDL.Float64),
+  'veggies' : IDL.Opt(IDL.Float64),
+  'date' : IDL.Text,
+  'restingHr' : IDL.Opt(IDL.Float64),
+  'systolic' : IDL.Opt(IDL.Float64),
+  'sport' : IDL.Opt(IDL.Text),
+  'fastingStart' : IDL.Opt(IDL.Text),
+  'movementDuration' : IDL.Opt(IDL.Float64),
+  'fastingEnd' : IDL.Opt(IDL.Text),
+  'diastolic' : IDL.Opt(IDL.Float64),
+  'water' : IDL.Opt(IDL.Float64),
+  'intensity' : IDL.Opt(IDL.Float64),
+  'protein' : IDL.Opt(IDL.Float64),
+  'sleepDuration' : IDL.Opt(IDL.Float64),
+});
 export const UserProfile = IDL.Record({
   'heightCm' : IDL.Opt(IDL.Nat),
   'bodyFatPct' : IDL.Opt(IDL.Float64),
@@ -21,6 +37,11 @@ export const UserProfile = IDL.Record({
   'name' : IDL.Text,
   'weightKg' : IDL.Opt(IDL.Float64),
   'gender' : IDL.Opt(IDL.Text),
+});
+export const DiaryEntry = IDL.Record({
+  'id' : IDL.Nat,
+  'text' : IDL.Text,
+  'timestamp' : IDL.Text,
 });
 export const RoutineWithStatus = IDL.Record({
   'id' : IDL.Nat,
@@ -30,17 +51,36 @@ export const RoutineWithStatus = IDL.Record({
   'time' : IDL.Text,
   'description' : IDL.Text,
 });
+export const ScoreEntry = IDL.Record({
+  'date' : IDL.Text,
+  'score' : IDL.Float64,
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'addDiaryEntry' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'createRoutine' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Result], []),
+  'deleteDiaryEntry' : IDL.Func([IDL.Nat], [Result], []),
   'deleteRoutine' : IDL.Func([IDL.Nat], [Result], []),
+  'getAllHealthData' : IDL.Func([], [IDL.Vec(DailyHealthData)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getDailyHealthData' : IDL.Func(
+      [IDL.Text],
+      [IDL.Opt(DailyHealthData)],
+      ['query'],
+    ),
+  'getDiaryEntriesForCaller' : IDL.Func([], [IDL.Vec(DiaryEntry)], ['query']),
   'getRoutinesForCaller' : IDL.Func(
       [],
       [IDL.Vec(RoutineWithStatus)],
+      ['query'],
+    ),
+  'getScoreHistoryForCaller' : IDL.Func([], [IDL.Vec(ScoreEntry)], ['query']),
+  'getScoreHistoryForUser' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(ScoreEntry)],
       ['query'],
     ),
   'getSingleRoutine' : IDL.Func([IDL.Nat], [RoutineWithStatus], ['query']),
@@ -53,6 +93,28 @@ export const idlService = IDL.Service({
   'markRoutineDone' : IDL.Func([IDL.Nat, IDL.Text], [Result], []),
   'markRoutineUndone' : IDL.Func([IDL.Nat], [Result], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'saveDailyHealthData' : IDL.Func(
+      [
+        IDL.Text,
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Float64),
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Text),
+      ],
+      [Result],
+      [],
+    ),
+  'saveDailyScore' : IDL.Func([IDL.Text, IDL.Float64], [Result], []),
+  'updateDiaryEntry' : IDL.Func([IDL.Nat, IDL.Text], [Result], []),
   'updateRoutine' : IDL.Func(
       [IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
       [Result],
@@ -63,12 +125,28 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const Result = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
-  const Result = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
+  const DailyHealthData = IDL.Record({
+    'sleepQuality' : IDL.Opt(IDL.Float64),
+    'veggies' : IDL.Opt(IDL.Float64),
+    'date' : IDL.Text,
+    'restingHr' : IDL.Opt(IDL.Float64),
+    'systolic' : IDL.Opt(IDL.Float64),
+    'sport' : IDL.Opt(IDL.Text),
+    'fastingStart' : IDL.Opt(IDL.Text),
+    'movementDuration' : IDL.Opt(IDL.Float64),
+    'fastingEnd' : IDL.Opt(IDL.Text),
+    'diastolic' : IDL.Opt(IDL.Float64),
+    'water' : IDL.Opt(IDL.Float64),
+    'intensity' : IDL.Opt(IDL.Float64),
+    'protein' : IDL.Opt(IDL.Float64),
+    'sleepDuration' : IDL.Opt(IDL.Float64),
+  });
   const UserProfile = IDL.Record({
     'heightCm' : IDL.Opt(IDL.Nat),
     'bodyFatPct' : IDL.Opt(IDL.Float64),
@@ -76,6 +154,11 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'weightKg' : IDL.Opt(IDL.Float64),
     'gender' : IDL.Opt(IDL.Text),
+  });
+  const DiaryEntry = IDL.Record({
+    'id' : IDL.Nat,
+    'text' : IDL.Text,
+    'timestamp' : IDL.Text,
   });
   const RoutineWithStatus = IDL.Record({
     'id' : IDL.Nat,
@@ -85,17 +168,33 @@ export const idlFactory = ({ IDL }) => {
     'time' : IDL.Text,
     'description' : IDL.Text,
   });
+  const ScoreEntry = IDL.Record({ 'date' : IDL.Text, 'score' : IDL.Float64 });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'addDiaryEntry' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'createRoutine' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Result], []),
+    'deleteDiaryEntry' : IDL.Func([IDL.Nat], [Result], []),
     'deleteRoutine' : IDL.Func([IDL.Nat], [Result], []),
+    'getAllHealthData' : IDL.Func([], [IDL.Vec(DailyHealthData)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getDailyHealthData' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(DailyHealthData)],
+        ['query'],
+      ),
+    'getDiaryEntriesForCaller' : IDL.Func([], [IDL.Vec(DiaryEntry)], ['query']),
     'getRoutinesForCaller' : IDL.Func(
         [],
         [IDL.Vec(RoutineWithStatus)],
+        ['query'],
+      ),
+    'getScoreHistoryForCaller' : IDL.Func([], [IDL.Vec(ScoreEntry)], ['query']),
+    'getScoreHistoryForUser' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(ScoreEntry)],
         ['query'],
       ),
     'getSingleRoutine' : IDL.Func([IDL.Nat], [RoutineWithStatus], ['query']),
@@ -108,6 +207,28 @@ export const idlFactory = ({ IDL }) => {
     'markRoutineDone' : IDL.Func([IDL.Nat, IDL.Text], [Result], []),
     'markRoutineUndone' : IDL.Func([IDL.Nat], [Result], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'saveDailyHealthData' : IDL.Func(
+        [
+          IDL.Text,
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Float64),
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Text),
+        ],
+        [Result],
+        [],
+      ),
+    'saveDailyScore' : IDL.Func([IDL.Text, IDL.Float64], [Result], []),
+    'updateDiaryEntry' : IDL.Func([IDL.Nat, IDL.Text], [Result], []),
     'updateRoutine' : IDL.Func(
         [IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
         [Result],

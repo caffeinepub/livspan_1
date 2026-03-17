@@ -17,7 +17,10 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { RoutineWithStatus } from "../backend.d";
+import DiaryCard from "../components/DiaryCard";
 import FastingCard from "../components/FastingCard";
+import LongevityScoreCard from "../components/LongevityScoreCard";
+import LongevityScoreHistoryCard from "../components/LongevityScoreHistoryCard";
 import MovementCard from "../components/MovementCard";
 import NutritionCard from "../components/NutritionCard";
 import PersonalDataCard from "../components/PersonalDataCard";
@@ -404,12 +407,15 @@ export default function DashboardPage() {
             transition={{ duration: 0.4, delay: 0.2 }}
             className="flex flex-col gap-4"
           >
+            <LongevityScoreCard />
+            <LongevityScoreHistoryCard />
             <PersonalDataCard />
             <NutritionCard />
             <SleepCard />
             <StressCard />
             <FastingCard />
             <MovementCard />
+            <DiaryCard />
             <PlaceholderCard
               title={tr.biomarkers_title}
               icon={<Activity className="w-5 h-5" />}

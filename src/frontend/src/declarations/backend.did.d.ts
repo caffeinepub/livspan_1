@@ -10,6 +10,27 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface DailyHealthData {
+  'sleepQuality' : [] | [number],
+  'veggies' : [] | [number],
+  'date' : string,
+  'restingHr' : [] | [number],
+  'systolic' : [] | [number],
+  'sport' : [] | [string],
+  'fastingStart' : [] | [string],
+  'movementDuration' : [] | [number],
+  'fastingEnd' : [] | [string],
+  'diastolic' : [] | [number],
+  'water' : [] | [number],
+  'intensity' : [] | [number],
+  'protein' : [] | [number],
+  'sleepDuration' : [] | [number],
+}
+export interface DiaryEntry {
+  'id' : bigint,
+  'text' : string,
+  'timestamp' : string,
+}
 export type Result = { 'ok' : null } |
   { 'err' : string };
 export interface RoutineWithStatus {
@@ -20,6 +41,7 @@ export interface RoutineWithStatus {
   'time' : string,
   'description' : string,
 }
+export interface ScoreEntry { 'date' : string, 'score' : number }
 export interface UserProfile {
   'heightCm' : [] | [bigint],
   'bodyFatPct' : [] | [number],
@@ -33,18 +55,46 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'addDiaryEntry' : ActorMethod<[string, string], Result>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createRoutine' : ActorMethod<[string, string, string], Result>,
+  'deleteDiaryEntry' : ActorMethod<[bigint], Result>,
   'deleteRoutine' : ActorMethod<[bigint], Result>,
+  'getAllHealthData' : ActorMethod<[], Array<DailyHealthData>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getDailyHealthData' : ActorMethod<[string], [] | [DailyHealthData]>,
+  'getDiaryEntriesForCaller' : ActorMethod<[], Array<DiaryEntry>>,
   'getRoutinesForCaller' : ActorMethod<[], Array<RoutineWithStatus>>,
+  'getScoreHistoryForCaller' : ActorMethod<[], Array<ScoreEntry>>,
+  'getScoreHistoryForUser' : ActorMethod<[Principal], Array<ScoreEntry>>,
   'getSingleRoutine' : ActorMethod<[bigint], RoutineWithStatus>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'markRoutineDone' : ActorMethod<[bigint, string], Result>,
   'markRoutineUndone' : ActorMethod<[bigint], Result>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'saveDailyHealthData' : ActorMethod<
+    [
+      string,
+      [] | [number],
+      [] | [number],
+      [] | [number],
+      [] | [number],
+      [] | [number],
+      [] | [string],
+      [] | [number],
+      [] | [number],
+      [] | [number],
+      [] | [number],
+      [] | [number],
+      [] | [string],
+      [] | [string],
+    ],
+    Result
+  >,
+  'saveDailyScore' : ActorMethod<[string, number], Result>,
+  'updateDiaryEntry' : ActorMethod<[bigint, string], Result>,
   'updateRoutine' : ActorMethod<[bigint, string, string, string], Result>,
 }
 export declare const idlService: IDL.ServiceClass;

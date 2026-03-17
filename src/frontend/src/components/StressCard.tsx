@@ -1,7 +1,8 @@
 import { Slider } from "@/components/ui/slider";
 import { HeartPulse } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "../hooks/useLanguage";
+import { useGetTodayHealthData, useSaveHealthData } from "../hooks/useQueries";
 import { t } from "../i18n";
 
 const STORAGE_KEY = "livspan-stress";
@@ -9,6 +10,14 @@ const STORAGE_KEY = "livspan-stress";
 function getTodayKey() {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+function getTodayKeyPadded() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function loadToday(): {
@@ -74,11 +83,49 @@ export default function StressCard() {
   const { lang } = useLanguage();
   const tr = t[lang];
 
+  const todayKey = getTodayKeyPadded();
+  const { data: backendHealth } = useGetTodayHealthData(todayKey);
+  const saveHealth = useSaveHealthData();
+
   const [values, setValues] = useState(() => loadToday());
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (backendHealth && !initializedRef.current) {
+      initializedRef.current = true;
+      const local = loadToday();
+      setValues({
+        systolic: backendHealth.systolic ?? local.systolic,
+        diastolic: backendHealth.diastolic ?? local.diastolic,
+        restingHr: backendHealth.restingHr ?? local.restingHr,
+      });
+    }
+  }, [backendHealth]);
 
   useEffect(() => {
     saveToday(values);
-  }, [values]);
+    const timer = setTimeout(() => {
+      saveHealth.mutate({
+        date: todayKey,
+        systolic: values.systolic,
+        diastolic: values.diastolic,
+        restingHr: values.restingHr,
+        sleepDuration: backendHealth?.sleepDuration ?? undefined,
+        sleepQuality: backendHealth?.sleepQuality ?? undefined,
+        protein: backendHealth?.protein ?? undefined,
+        veggies: backendHealth?.veggies ?? undefined,
+        water: backendHealth?.water ?? undefined,
+        sport: backendHealth?.sport ?? undefined,
+        intensity: backendHealth?.intensity ?? undefined,
+        movementDuration: backendHealth?.movementDuration ?? undefined,
+        fastingStart: backendHealth?.fastingStart ?? undefined,
+        fastingEnd: backendHealth?.fastingEnd ?? undefined,
+      });
+    }, 800);
+    return () => clearTimeout(timer);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: backendHealth used for merge only, intentionally stable
+    // eslint-disable-next-line
+  }, [values, backendHealth, saveHealth, todayKey]);
 
   const set = (key: "systolic" | "diastolic" | "restingHr", v: number) =>
     setValues((prev) => ({ ...prev, [key]: v }));

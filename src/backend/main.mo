@@ -11,14 +11,10 @@ import Principal "mo:core/Principal";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 import Runtime "mo:core/Runtime";
+import Migration "migration";
 
-
-
+(with migration = Migration.run)
 actor {
-  // Initialize the access control state
-  let accessControlState = AccessControl.initState();
-  include MixinAuthorization(accessControlState);
-
   // User Profile Types
   public type UserProfile = {
     name : Text;
@@ -29,8 +25,9 @@ actor {
     bodyFatPct : ?Float;
   };
 
-  // User state
-  let userProfiles = Map.empty<Principal, UserProfile>();
+  // Initialize the access control state
+  let accessControlState = AccessControl.initState();
+  include MixinAuthorization(accessControlState);
 
   // Routine Types
   public type Routine = {
@@ -68,6 +65,44 @@ actor {
     routine : Routine;
     owner : Principal;
   };
+
+  // Longevity Score History Types
+  public type ScoreEntry = {
+    date : Text; // YYYY-MM-DD
+    score : Float;
+  };
+
+  // Diary Types
+  public type DiaryEntry = {
+    id : Nat;
+    text : Text;
+    timestamp : Text;
+  };
+
+  // Daily Health Data Types
+  public type DailyHealthData = {
+    date : Text;
+    sleepDuration : ?Float; // hours
+    sleepQuality : ?Float; // 1-10
+    protein : ?Float; // grams
+    veggies : ?Float; // servings
+    water : ?Float; // liters
+    sport : ?Text;
+    intensity : ?Float; // 1-10
+    movementDuration : ?Float; // minutes
+    systolic : ?Float; // mmHg
+    diastolic : ?Float; // mmHg
+    restingHr : ?Float; // bpm
+    fastingStart : ?Text;
+    fastingEnd : ?Text;
+  };
+
+  // User state
+  let userProfiles = Map.empty<Principal, UserProfile>();
+  let userScoreHistory = Map.empty<Principal, [ScoreEntry]>();
+  let userDiaryEntries = Map.empty<Principal, [DiaryEntry]>();
+  let userDailyHealthData = Map.empty<Principal, [DailyHealthData]>();
+  var nextDiaryId = 0;
 
   // Routine state
   let routines = Map.empty<Nat, RoutineInternal>();
@@ -264,5 +299,207 @@ actor {
     userCompletions.remove(id);
     completions.add(caller, userCompletions);
     #ok;
+  };
+
+  // Longevity Score History Functions
+  public shared ({ caller }) func saveDailyScore(date : Text, score : Float) : async Result {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save score entries");
+    };
+
+    let newEntry : ScoreEntry = {
+      date;
+      score;
+    };
+
+    let currentEntries = switch (userScoreHistory.get(caller)) {
+      case (null) { [] };
+      case (?entries) { entries };
+    };
+
+    // Remove existing entry for the same date if exists
+    let filteredEntries = currentEntries.filter(
+      func(entry) { entry.date != date }
+    );
+
+    userScoreHistory.add(caller, filteredEntries.concat([newEntry]));
+    #ok;
+  };
+
+  public query ({ caller }) func getScoreHistoryForCaller() : async [ScoreEntry] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view score history");
+    };
+
+    switch (userScoreHistory.get(caller)) {
+      case (null) { [] };
+      case (?entries) { entries };
+    };
+  };
+
+  public query ({ caller }) func getScoreHistoryForUser(user : Principal) : async [ScoreEntry] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view other users' score history");
+    };
+
+    switch (userScoreHistory.get(user)) {
+      case (null) { [] };
+      case (?entries) { entries };
+    };
+  };
+
+  // Diary Functions
+  public query ({ caller }) func getDiaryEntriesForCaller() : async [DiaryEntry] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view diary entries");
+    };
+
+    switch (userDiaryEntries.get(caller)) {
+      case (null) { [] };
+      case (?entries) { entries };
+    };
+  };
+
+  public shared ({ caller }) func addDiaryEntry(text : Text, timestamp : Text) : async Result {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can add diary entries");
+    };
+
+    if (text.size() <= 0) {
+      return #err("Text required");
+    };
+
+    let id = nextDiaryId;
+    nextDiaryId += 1;
+
+    let newEntry : DiaryEntry = { id; text; timestamp };
+
+    let currentEntries = switch (userDiaryEntries.get(caller)) {
+      case (null) { [] };
+      case (?entries) { entries };
+    };
+
+    userDiaryEntries.add(caller, [newEntry].concat(currentEntries));
+    #ok;
+  };
+
+  public shared ({ caller }) func updateDiaryEntry(id : Nat, text : Text) : async Result {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update diary entries");
+    };
+
+    if (text.size() <= 0) {
+      return #err("Text required");
+    };
+
+    let currentEntries = switch (userDiaryEntries.get(caller)) {
+      case (null) { return #err("No entries found") };
+      case (?entries) { entries };
+    };
+
+    let found = currentEntries.filter(func(e) { e.id == id });
+    if (found.size() == 0) {
+      return #err("Entry not found");
+    };
+
+    let updated = currentEntries.map(func(e) {
+      if (e.id == id) { { id = e.id; text; timestamp = e.timestamp } }
+      else { e }
+    });
+
+    userDiaryEntries.add(caller, updated);
+    #ok;
+  };
+
+  public shared ({ caller }) func deleteDiaryEntry(id : Nat) : async Result {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can delete diary entries");
+    };
+
+    let currentEntries = switch (userDiaryEntries.get(caller)) {
+      case (null) { return #err("No entries found") };
+      case (?entries) { entries };
+    };
+
+    let updated = currentEntries.filter(func(e) { e.id != id });
+    userDiaryEntries.add(caller, updated);
+    #ok;
+  };
+
+  // Daily Health Data Functions
+  public shared ({ caller }) func saveDailyHealthData(
+    date : Text,
+    sleepDuration : ?Float,
+    sleepQuality : ?Float,
+    protein : ?Float,
+    veggies : ?Float,
+    water : ?Float,
+    sport : ?Text,
+    intensity : ?Float,
+    movementDuration : ?Float,
+    systolic : ?Float,
+    diastolic : ?Float,
+    restingHr : ?Float,
+    fastingStart : ?Text,
+    fastingEnd : ?Text,
+  ) : async Result {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save health data");
+    };
+
+    let newEntry : DailyHealthData = {
+      date;
+      sleepDuration;
+      sleepQuality;
+      protein;
+      veggies;
+      water;
+      sport;
+      intensity;
+      movementDuration;
+      systolic;
+      diastolic;
+      restingHr;
+      fastingStart;
+      fastingEnd;
+    };
+
+    let currentEntries = switch (userDailyHealthData.get(caller)) {
+      case (null) { [] };
+      case (?entries) { entries };
+    };
+
+    // Remove existing entry for the same date if exists
+    let filteredEntries = currentEntries.filter(
+      func(entry) { entry.date != date }
+    );
+
+    userDailyHealthData.add(caller, filteredEntries.concat([newEntry]));
+    #ok;
+  };
+
+  public query ({ caller }) func getDailyHealthData(date : Text) : async ?DailyHealthData {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view health data");
+    };
+
+    switch (userDailyHealthData.get(caller)) {
+      case (null) { null };
+      case (?entries) {
+        let matching = entries.filter(func(e) { e.date == date });
+        if (matching.size() == 0) { null } else { ?matching[0] };
+      };
+    };
+  };
+
+  public query ({ caller }) func getAllHealthData() : async [DailyHealthData] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view health data");
+    };
+
+    switch (userDailyHealthData.get(caller)) {
+      case (null) { [] };
+      case (?entries) { entries };
+    };
   };
 };

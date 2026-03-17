@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Timer, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "../hooks/useLanguage";
+import { useGetTodayHealthData, useSaveHealthData } from "../hooks/useQueries";
 import { t } from "../i18n";
 
 const STORAGE_KEY = "livspan-fasting";
@@ -9,6 +10,14 @@ const STORAGE_KEY = "livspan-fasting";
 interface FastingSchedule {
   startTime: string; // "HH:MM"
   endTime: string; // "HH:MM"
+}
+
+function getTodayKeyPadded() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function loadSchedule(): FastingSchedule | null {
@@ -150,6 +159,10 @@ export default function FastingCard() {
   const { lang } = useLanguage();
   const tr = t[lang];
 
+  const todayKey = getTodayKeyPadded();
+  const { data: backendHealth } = useGetTodayHealthData(todayKey);
+  const saveHealth = useSaveHealthData();
+
   const [schedule, setSchedule] = useState<FastingSchedule | null>(() =>
     loadSchedule(),
   );
@@ -159,6 +172,7 @@ export default function FastingCard() {
 
   const [now, setNow] = useState(() => new Date());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => setNow(new Date()), 1000);
@@ -166,6 +180,43 @@ export default function FastingCard() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
+
+  // Load from backend on first load
+  useEffect(() => {
+    if (backendHealth && !initializedRef.current) {
+      initializedRef.current = true;
+      if (backendHealth.fastingStart && backendHealth.fastingEnd) {
+        const s: FastingSchedule = {
+          startTime: backendHealth.fastingStart,
+          endTime: backendHealth.fastingEnd,
+        };
+        saveSchedule(s);
+        setSchedule(s);
+      }
+    }
+  }, [backendHealth]);
+
+  const persistSchedule = (s: FastingSchedule) => {
+    saveSchedule(s);
+    setSchedule(s);
+    // Save to backend
+    saveHealth.mutate({
+      date: todayKey,
+      fastingStart: s.startTime,
+      fastingEnd: s.endTime,
+      sleepDuration: backendHealth?.sleepDuration ?? undefined,
+      sleepQuality: backendHealth?.sleepQuality ?? undefined,
+      protein: backendHealth?.protein ?? undefined,
+      veggies: backendHealth?.veggies ?? undefined,
+      water: backendHealth?.water ?? undefined,
+      sport: backendHealth?.sport ?? undefined,
+      intensity: backendHealth?.intensity ?? undefined,
+      movementDuration: backendHealth?.movementDuration ?? undefined,
+      systolic: backendHealth?.systolic ?? undefined,
+      diastolic: backendHealth?.diastolic ?? undefined,
+      restingHr: backendHealth?.restingHr ?? undefined,
+    });
+  };
 
   const handleEdit = () => {
     if (schedule) {
@@ -178,8 +229,7 @@ export default function FastingCard() {
   const handleSave = () => {
     if (draftStart === draftEnd) return;
     const s: FastingSchedule = { startTime: draftStart, endTime: draftEnd };
-    saveSchedule(s);
-    setSchedule(s);
+    persistSchedule(s);
     setEditMode(false);
   };
 

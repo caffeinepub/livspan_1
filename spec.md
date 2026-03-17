@@ -1,38 +1,27 @@
 # LivSpan
 
 ## Current State
-New project. No existing backend or frontend.
+Backend speichert: Routinen, Nutzerprofil, Score-Verlauf, Tagebuch.
+Gesundheitskarten (Schlaf, Ernaehrung, Bewegung, Stress, Fasten) speichern nur in localStorage.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Wallet-based authentication (sign in with wallet address, no email/password)
-- Daily Routines: create, edit, delete routines with title, time (Uhrzeit), and description
-- Checkbox to mark each routine as done
-- Auto-reset of routine completion status after midnight each day
-- Routines sorted by time
-- Dashboard page showing all routines for logged-in user
+- DailyHealthData Typ im Backend (date + optionale sleep/nutrition/movement/stress/fasting Felder)
+- saveDailyHealthData, getDailyHealthData Funktionen
+- Frontend Hooks: useGetHealthData, useSaveHealthData
+- Cards laden beim Mount aus Backend, speichern bei Aenderung ins Backend (debounced)
 
 ### Modify
-- N/A (new project)
+- SleepCard, NutritionCard, MovementCard, StressCard, FastingCard: Backend-Integration
+- useQueries.ts: neue Hooks
+- backend.d.ts: neue Typen/Methoden
 
 ### Remove
-- N/A
+- Nichts (localStorage bleibt als Fallback)
 
 ## Implementation Plan
-1. Backend (Motoko):
-   - User identity based on principal (wallet address)
-   - Routine data model: id, owner (principal), title, time (text HH:MM), description, createdAt
-   - Completion tracking: routineId -> last completed date (YYYY-MM-DD)
-   - CRUD operations: createRoutine, updateRoutine, deleteRoutine, getRoutines
-   - markDone / markUndone with date tracking
-   - getRoutinesWithStatus: returns routines with computed done=true/false based on today's date
-
-2. Frontend:
-   - Login page: connect wallet / enter wallet address to authenticate via II (Internet Identity)
-   - Dashboard page: list of routines sorted by time
-   - Create Routine modal/form
-   - Edit Routine inline or modal
-   - Delete confirmation
-   - Animated checkbox for done state
-   - Dark mode premium UI with deep greens and blues
+1. Backend: DailyHealthData + saveDailyHealthData + getDailyHealthData
+2. backend.d.ts aktualisieren
+3. useQueries.ts: neue Hooks
+4. 5 Health-Cards: Backend laden + speichern (debounced 800ms)

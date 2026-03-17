@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { RoutineWithStatus, UserProfile } from "../backend.d";
+import type {
+  DailyHealthData,
+  DiaryEntry,
+  RoutineWithStatus,
+  ScoreEntry,
+  UserProfile,
+} from "../backend.d";
 import { useActor } from "./useActor";
 
 export function useGetRoutines() {
@@ -118,5 +124,126 @@ export function useSaveProfile() {
       await actor.saveCallerUserProfile(profile);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["callerProfile"] }),
+  });
+}
+
+export function useGetScoreHistory() {
+  const { actor, isFetching: actorFetching } = useActor();
+  return useQuery<ScoreEntry[]>({
+    queryKey: ["scoreHistory"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getScoreHistoryForCaller();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+export function useSaveScoreEntry() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ date, score }: { date: string; score: number }) => {
+      if (!actor) throw new Error("Not connected");
+      await actor.saveDailyScore(date, score);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["scoreHistory"] }),
+  });
+}
+
+// Diary hooks
+export function useGetDiaryEntries() {
+  const { actor, isFetching: actorFetching } = useActor();
+  return useQuery<DiaryEntry[]>({
+    queryKey: ["diaryEntries"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getDiaryEntriesForCaller();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+export function useAddDiaryEntry() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      text,
+      timestamp,
+    }: { text: string; timestamp: string }) => {
+      if (!actor) throw new Error("Not connected");
+      const result = await actor.addDiaryEntry(text, timestamp);
+      if (result.__kind__ === "err") throw new Error(result.err);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["diaryEntries"] }),
+  });
+}
+
+export function useUpdateDiaryEntry() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, text }: { id: bigint; text: string }) => {
+      if (!actor) throw new Error("Not connected");
+      const result = await actor.updateDiaryEntry(id, text);
+      if (result.__kind__ === "err") throw new Error(result.err);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["diaryEntries"] }),
+  });
+}
+
+export function useDeleteDiaryEntry() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: bigint) => {
+      if (!actor) throw new Error("Not connected");
+      const result = await actor.deleteDiaryEntry(id);
+      if (result.__kind__ === "err") throw new Error(result.err);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["diaryEntries"] }),
+  });
+}
+
+// Daily health data hooks
+export function useGetTodayHealthData(date: string) {
+  const { actor, isFetching: actorFetching } = useActor();
+  return useQuery<DailyHealthData | null>({
+    queryKey: ["healthData", date],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getDailyHealthData(date);
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+export function useSaveHealthData() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: DailyHealthData) => {
+      if (!actor) throw new Error("Not connected");
+      const result = await actor.saveDailyHealthData(
+        data.date,
+        data.sleepDuration ?? null,
+        data.sleepQuality ?? null,
+        data.protein ?? null,
+        data.veggies ?? null,
+        data.water ?? null,
+        data.sport ?? null,
+        data.intensity ?? null,
+        data.movementDuration ?? null,
+        data.systolic ?? null,
+        data.diastolic ?? null,
+        data.restingHr ?? null,
+        data.fastingStart ?? null,
+        data.fastingEnd ?? null,
+      );
+      if (result.__kind__ === "err") throw new Error(result.err);
+    },
+    onSuccess: (_data, variables) =>
+      qc.invalidateQueries({ queryKey: ["healthData", variables.date] }),
   });
 }
