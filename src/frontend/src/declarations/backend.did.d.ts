@@ -14,6 +14,7 @@ export interface DailyHealthData {
   'sleepQuality' : [] | [number],
   'veggies' : [] | [number],
   'date' : string,
+  'calories' : [] | [number],
   'restingHr' : [] | [number],
   'systolic' : [] | [number],
   'sport' : [] | [string],
@@ -90,6 +91,7 @@ export interface _SERVICE {
       [] | [number],
       [] | [string],
       [] | [string],
+      [] | [number],
     ],
     Result
   >,

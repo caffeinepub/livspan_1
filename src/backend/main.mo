@@ -11,9 +11,9 @@ import Principal "mo:core/Principal";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 import Runtime "mo:core/Runtime";
+import Migration "migration"; // migration module
 
-
-
+(with migration = Migration.run)
 actor {
   // User Profile Types
   public type UserProfile = {
@@ -95,6 +95,7 @@ actor {
     restingHr : ?Float; // bpm
     fastingStart : ?Text;
     fastingEnd : ?Text;
+    calories : ?Float; // New calories field
   };
 
   // User state
@@ -442,6 +443,7 @@ actor {
     restingHr : ?Float,
     fastingStart : ?Text,
     fastingEnd : ?Text,
+    calories : ?Float, // New calories parameter
   ) : async Result {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save health data");
@@ -462,6 +464,7 @@ actor {
       restingHr;
       fastingStart;
       fastingEnd;
+      calories; // Set calories field
     };
 
     let currentEntries = switch (userDailyHealthData.get(caller)) {

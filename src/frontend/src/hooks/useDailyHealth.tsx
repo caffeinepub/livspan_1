@@ -17,6 +17,7 @@ export interface DailyHealthState {
   protein: number;
   veggies: number;
   water: number;
+  calories: number;
   sport: string;
   intensity: number;
   movementDuration: number;
@@ -42,6 +43,7 @@ const EMPTY: DailyHealthState = {
   protein: 0,
   veggies: 0,
   water: 0,
+  calories: 0,
   sport: "running",
   intensity: 5,
   movementDuration: 0,
@@ -66,6 +68,7 @@ function fromBackend(data: DailyHealthData): DailyHealthState {
     protein: data.protein ?? 0,
     veggies: data.veggies ?? 0,
     water: data.water ?? 0,
+    calories: data.calories ?? 0,
     sport: data.sport ?? "running",
     intensity: data.intensity ?? 5,
     movementDuration: data.movementDuration ?? 0,
@@ -194,6 +197,7 @@ export function DailyHealthProvider({
             state.restingHr || null,
             state.fastingStart,
             state.fastingEnd,
+            state.calories || null,
           );
         } catch {
           // silently ignore save errors
@@ -233,6 +237,7 @@ export function DailyHealthProvider({
         actor
           .saveDailyHealthData(
             current,
+            null,
             null,
             null,
             null,

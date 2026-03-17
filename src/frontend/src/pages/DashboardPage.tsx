@@ -407,14 +407,14 @@ export default function DashboardPage() {
             transition={{ duration: 0.4, delay: 0.2 }}
             className="flex flex-col gap-4"
           >
+            <PersonalDataCard />
             <LongevityScoreCard />
             <LongevityScoreHistoryCard />
-            <SleepCard />
             <FastingCard />
             <NutritionCard />
             <MovementCard />
             <StressCard />
-            <PersonalDataCard />
+            <SleepCard />
             <DiaryCard />
             <PlaceholderCard
               title={tr.biomarkers_title}

@@ -240,6 +240,7 @@ export function useSaveHealthData() {
         data.restingHr ?? null,
         data.fastingStart ?? null,
         data.fastingEnd ?? null,
+        data.calories ?? null,
       );
       if (result.__kind__ === "err") throw new Error(result.err);
     },

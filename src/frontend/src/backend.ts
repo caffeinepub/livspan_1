@@ -93,6 +93,7 @@ export interface DailyHealthData {
     sleepQuality?: number;
     veggies?: number;
     date: string;
+    calories?: number;
     restingHr?: number;
     systolic?: number;
     sport?: string;
@@ -163,7 +164,7 @@ export interface backendInterface {
     markRoutineDone(id: bigint, date: string): Promise<Result>;
     markRoutineUndone(id: bigint): Promise<Result>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    saveDailyHealthData(date: string, sleepDuration: number | null, sleepQuality: number | null, protein: number | null, veggies: number | null, water: number | null, sport: string | null, intensity: number | null, movementDuration: number | null, systolic: number | null, diastolic: number | null, restingHr: number | null, fastingStart: string | null, fastingEnd: string | null): Promise<Result>;
+    saveDailyHealthData(date: string, sleepDuration: number | null, sleepQuality: number | null, protein: number | null, veggies: number | null, water: number | null, sport: string | null, intensity: number | null, movementDuration: number | null, systolic: number | null, diastolic: number | null, restingHr: number | null, fastingStart: string | null, fastingEnd: string | null, calories: number | null): Promise<Result>;
     saveDailyScore(date: string, score: number): Promise<Result>;
     updateDiaryEntry(id: bigint, text: string): Promise<Result>;
     updateRoutine(id: bigint, title: string, time: string, description: string): Promise<Result>;
@@ -451,17 +452,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async saveDailyHealthData(arg0: string, arg1: number | null, arg2: number | null, arg3: number | null, arg4: number | null, arg5: number | null, arg6: string | null, arg7: number | null, arg8: number | null, arg9: number | null, arg10: number | null, arg11: number | null, arg12: string | null, arg13: string | null): Promise<Result> {
+    async saveDailyHealthData(arg0: string, arg1: number | null, arg2: number | null, arg3: number | null, arg4: number | null, arg5: number | null, arg6: string | null, arg7: number | null, arg8: number | null, arg9: number | null, arg10: number | null, arg11: number | null, arg12: string | null, arg13: string | null, arg14: number | null): Promise<Result> {
         if (this.processError) {
             try {
-                const result = await this.actor.saveDailyHealthData(arg0, to_candid_opt_n19(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg2), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg3), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg4), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg5), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg6), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg7), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg8), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg9), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg10), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg11), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg12), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg13));
+                const result = await this.actor.saveDailyHealthData(arg0, to_candid_opt_n19(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg2), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg3), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg4), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg5), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg6), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg7), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg8), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg9), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg10), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg11), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg12), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg13), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg14));
                 return from_candid_Result_n1(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.saveDailyHealthData(arg0, to_candid_opt_n19(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg2), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg3), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg4), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg5), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg6), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg7), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg8), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg9), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg10), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg11), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg12), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg13));
+            const result = await this.actor.saveDailyHealthData(arg0, to_candid_opt_n19(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg2), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg3), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg4), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg5), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg6), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg7), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg8), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg9), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg10), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg11), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg12), to_candid_opt_n20(this._uploadFile, this._downloadFile, arg13), to_candid_opt_n19(this._uploadFile, this._downloadFile, arg14));
             return from_candid_Result_n1(this._uploadFile, this._downloadFile, result);
         }
     }
@@ -563,6 +564,7 @@ function from_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint
     sleepQuality: [] | [number];
     veggies: [] | [number];
     date: string;
+    calories: [] | [number];
     restingHr: [] | [number];
     systolic: [] | [number];
     sport: [] | [string];
@@ -578,6 +580,7 @@ function from_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint
     sleepQuality?: number;
     veggies?: number;
     date: string;
+    calories?: number;
     restingHr?: number;
     systolic?: number;
     sport?: string;
@@ -594,6 +597,7 @@ function from_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint
         sleepQuality: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.sleepQuality)),
         veggies: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.veggies)),
         date: value.date,
+        calories: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.calories)),
         restingHr: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.restingHr)),
         systolic: record_opt_to_undefined(from_candid_opt_n8(_uploadFile, _downloadFile, value.systolic)),
         sport: record_opt_to_undefined(from_candid_opt_n9(_uploadFile, _downloadFile, value.sport)),
