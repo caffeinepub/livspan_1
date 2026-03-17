@@ -11,8 +11,8 @@ import Principal "mo:core/Principal";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 import Runtime "mo:core/Runtime";
- // migration module
-
+import Nat64 "mo:core/Nat64";
+import Blob "mo:core/Blob";
 
 actor {
   // User Profile Types
@@ -98,11 +98,47 @@ actor {
     calories : ?Float; // New calories field
   };
 
+  // Subscription Types
+  public type SubscriptionStatus = {
+    isActive : Bool;
+    expiryDate : ?Int; // Expiry timestamp in nanoseconds
+  };
+
+  // ICP Ledger Types
+  type AccountIdentifier = Blob;
+  type Tokens = { e8s : Nat64 };
+  type Block = {
+    transaction : {
+      operation : ?{
+        #Transfer : {
+          from : AccountIdentifier;
+          to : AccountIdentifier;
+          amount : Tokens;
+          fee : Tokens;
+        };
+      };
+    };
+  };
+  type GetBlocksArgs = {
+    start : Nat64;
+    length : Nat64;
+  };
+  type QueryBlocksResponse = {
+    blocks : [Block];
+  };
+
+  // Constants
+  let ownerAccountId = "5677f79bb400519598c0e75be936cafc391a930d21268d6fcf1eee3cb5c9d582";
+  let subscriptionPrice = 100_000_000;
+  let subscriptionDuration = 365 * 24 * 60 * 60 * 1_000_000_000; // 12 months in nanoseconds
+  let ledgerCanisterId = "ryjl3-tyaaa-aaaaa-aaaba-cai";
+
   // User state
   let userProfiles = Map.empty<Principal, UserProfile>();
   let userScoreHistory = Map.empty<Principal, [ScoreEntry]>();
   let userDiaryEntries = Map.empty<Principal, [DiaryEntry]>();
   let userDailyHealthData = Map.empty<Principal, [DailyHealthData]>();
+  let subscriptions = Map.empty<Principal, Int>();
   var nextDiaryId = 0;
 
   // Routine state
@@ -443,7 +479,7 @@ actor {
     restingHr : ?Float,
     fastingStart : ?Text,
     fastingEnd : ?Text,
-    calories : ?Float, // New calories parameter
+    calories : ?Float,
   ) : async Result {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save health data");
@@ -464,7 +500,7 @@ actor {
       restingHr;
       fastingStart;
       fastingEnd;
-      calories; // Set calories field
+      calories;
     };
 
     let currentEntries = switch (userDailyHealthData.get(caller)) {
@@ -504,5 +540,107 @@ actor {
       case (null) { [] };
       case (?entries) { entries };
     };
+  };
+
+  // Subscription Functions
+  public query ({ caller }) func checkSubscription() : async SubscriptionStatus {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can check subscription status");
+    };
+
+    let currentTime = Time.now();
+    switch (subscriptions.get(caller)) {
+      case (null) {
+        {
+          isActive = false;
+          expiryDate = null;
+        };
+      };
+      case (?expiry) {
+        if (expiry > currentTime) {
+          let expiryDateInt = expiry;
+          {
+            isActive = true;
+            expiryDate = ?expiryDateInt;
+          };
+        } else {
+          {
+            isActive = false;
+            expiryDate = null;
+          };
+        };
+      };
+    };
+  };
+
+  func hexToBlob(hex : Text) : Blob {
+    let chars = hex.chars();
+    var bytes : [Nat8] = [];
+    var buffer = "";
+    for (c in chars) {
+      buffer #= Text.fromChar(c);
+      if (buffer.size() == 2) {
+        let byte = switch (Nat.fromText("0x" # buffer)) {
+          case (?n) { Nat8.fromNat(n) };
+          case null { 0 : Nat8 };
+        };
+        bytes := bytes.concat([byte]);
+        buffer := "";
+      };
+    };
+    Blob.fromArray(bytes);
+  };
+
+  public shared ({ caller }) func activateSubscription(blockIndex : Nat64) : async Result {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can activate subscriptions");
+    };
+
+    let ledger : actor {
+      query_blocks : (GetBlocksArgs) -> async QueryBlocksResponse;
+    } = actor (ledgerCanisterId);
+
+    let response = try {
+      await ledger.query_blocks({
+        start = blockIndex;
+        length = 1;
+      });
+    } catch (e) {
+      return #err("Failed to query ledger: " # Error.message(e));
+    };
+
+    if (response.blocks.size() == 0) {
+      return #err("Block not found");
+    };
+
+    let block = response.blocks[0];
+    let ownerAccountBlob = hexToBlob(ownerAccountId);
+
+    switch (block.transaction.operation) {
+      case (?#Transfer(transfer)) {
+        if (transfer.to != ownerAccountBlob) {
+          return #err("Transfer not to owner account");
+        };
+        if (transfer.amount.e8s < Nat64.fromNat(subscriptionPrice)) {
+          return #err("Insufficient payment amount");
+        };
+        let expiryTime = Time.now() + subscriptionDuration;
+        subscriptions.add(caller, expiryTime);
+        #ok;
+      };
+      case (_) {
+        return #err("Invalid transaction type");
+      };
+    };
+  };
+
+  public shared ({ caller }) func adminActivateSubscription(user : Principal) : async Result {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can manually activate subscriptions");
+    };
+
+    let expiryTime = Time.now() + subscriptionDuration;
+    subscriptions.add(user, expiryTime);
+    #ok;
   };
 };

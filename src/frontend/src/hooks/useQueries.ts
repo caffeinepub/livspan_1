@@ -4,6 +4,7 @@ import type {
   DiaryEntry,
   RoutineWithStatus,
   ScoreEntry,
+  SubscriptionStatus,
   UserProfile,
 } from "../backend.d";
 import { useActor } from "./useActor";
@@ -246,5 +247,31 @@ export function useSaveHealthData() {
     },
     onSuccess: (_data, variables) =>
       qc.invalidateQueries({ queryKey: ["healthData", variables.date] }),
+  });
+}
+
+// Subscription hooks
+export function useCheckSubscription() {
+  const { actor, isFetching: actorFetching } = useActor();
+  return useQuery<SubscriptionStatus>({
+    queryKey: ["subscription"],
+    queryFn: async () => {
+      if (!actor) return { isActive: false };
+      return actor.checkSubscription();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+export function useActivateSubscription() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (blockIndex: bigint) => {
+      if (!actor) throw new Error("Not connected");
+      const result = await actor.activateSubscription(blockIndex);
+      if (result.__kind__ === "err") throw new Error(result.err);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["subscription"] }),
   });
 }

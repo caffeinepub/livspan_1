@@ -43,6 +43,10 @@ export interface RoutineWithStatus {
   'description' : string,
 }
 export interface ScoreEntry { 'date' : string, 'score' : number }
+export interface SubscriptionStatus {
+  'expiryDate' : [] | [bigint],
+  'isActive' : boolean,
+}
 export interface UserProfile {
   'heightCm' : [] | [bigint],
   'bodyFatPct' : [] | [number],
@@ -56,8 +60,11 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'activateSubscription' : ActorMethod<[bigint], Result>,
   'addDiaryEntry' : ActorMethod<[string, string], Result>,
+  'adminActivateSubscription' : ActorMethod<[Principal], Result>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'checkSubscription' : ActorMethod<[], SubscriptionStatus>,
   'createRoutine' : ActorMethod<[string, string, string], Result>,
   'deleteDiaryEntry' : ActorMethod<[bigint], Result>,
   'deleteRoutine' : ActorMethod<[bigint], Result>,

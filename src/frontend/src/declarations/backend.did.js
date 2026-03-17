@@ -14,6 +14,10 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const SubscriptionStatus = IDL.Record({
+  'expiryDate' : IDL.Opt(IDL.Int),
+  'isActive' : IDL.Bool,
+});
 export const DailyHealthData = IDL.Record({
   'sleepQuality' : IDL.Opt(IDL.Float64),
   'veggies' : IDL.Opt(IDL.Float64),
@@ -59,8 +63,11 @@ export const ScoreEntry = IDL.Record({
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'activateSubscription' : IDL.Func([IDL.Nat64], [Result], []),
   'addDiaryEntry' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
+  'adminActivateSubscription' : IDL.Func([IDL.Principal], [Result], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'checkSubscription' : IDL.Func([], [SubscriptionStatus], ['query']),
   'createRoutine' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Result], []),
   'deleteDiaryEntry' : IDL.Func([IDL.Nat], [Result], []),
   'deleteRoutine' : IDL.Func([IDL.Nat], [Result], []),
@@ -133,6 +140,10 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const SubscriptionStatus = IDL.Record({
+    'expiryDate' : IDL.Opt(IDL.Int),
+    'isActive' : IDL.Bool,
+  });
   const DailyHealthData = IDL.Record({
     'sleepQuality' : IDL.Opt(IDL.Float64),
     'veggies' : IDL.Opt(IDL.Float64),
@@ -175,8 +186,11 @@ export const idlFactory = ({ IDL }) => {
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'activateSubscription' : IDL.Func([IDL.Nat64], [Result], []),
     'addDiaryEntry' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
+    'adminActivateSubscription' : IDL.Func([IDL.Principal], [Result], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'checkSubscription' : IDL.Func([], [SubscriptionStatus], ['query']),
     'createRoutine' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Result], []),
     'deleteDiaryEntry' : IDL.Func([IDL.Nat], [Result], []),
     'deleteRoutine' : IDL.Func([IDL.Nat], [Result], []),

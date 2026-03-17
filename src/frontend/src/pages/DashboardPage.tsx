@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   BookOpen,
+  CalendarCheck,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -53,12 +54,26 @@ function formatDateLabel(date: Date, lang: "de" | "en") {
   });
 }
 
+function formatExpiryDate(ns: bigint, lang: "de" | "en") {
+  const ms = Number(ns) / 1_000_000;
+  const d = new Date(ms);
+  return d.toLocaleDateString(lang === "de" ? "de-DE" : "en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 function shortenPrincipal(principal: string) {
   if (principal.length <= 12) return principal;
   return `${principal.slice(0, 6)}...${principal.slice(-4)}`;
 }
 
-export default function DashboardPage() {
+interface DashboardPageProps {
+  expiryDate?: bigint;
+}
+
+export default function DashboardPage({ expiryDate }: DashboardPageProps) {
   const { clear, identity } = useInternetIdentity();
   const { lang, setLang } = useLanguage();
   const tr = t[lang];
@@ -209,6 +224,24 @@ export default function DashboardPage() {
             </span>
           </nav>
           <div className="flex items-center gap-3">
+            {/* Subscription expiry badge */}
+            {expiryDate !== undefined && (
+              <div
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/10 border border-gold/25 text-xs text-gold/90"
+                title={
+                  lang === "de"
+                    ? "Abonnement-Ablaufdatum"
+                    : "Subscription expiry"
+                }
+                data-ocid="dashboard.panel"
+              >
+                <CalendarCheck className="w-3 h-3" />
+                <span>
+                  {lang === "de" ? "Zugang bis:" : "Access until:"}{" "}
+                  {formatExpiryDate(expiryDate, lang)}
+                </span>
+              </div>
+            )}
             {/* Language toggle */}
             <div className="flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden text-xs font-semibold">
               <button

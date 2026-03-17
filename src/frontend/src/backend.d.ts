@@ -48,6 +48,10 @@ export interface RoutineWithStatus {
     time: string;
     description: string;
 }
+export interface SubscriptionStatus {
+    expiryDate?: bigint;
+    isActive: boolean;
+}
 export interface UserProfile {
     heightCm?: bigint;
     bodyFatPct?: number;
@@ -62,8 +66,11 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
+    activateSubscription(blockIndex: bigint): Promise<Result>;
     addDiaryEntry(text: string, timestamp: string): Promise<Result>;
+    adminActivateSubscription(user: Principal): Promise<Result>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    checkSubscription(): Promise<SubscriptionStatus>;
     createRoutine(title: string, time: string, description: string): Promise<Result>;
     deleteDiaryEntry(id: bigint): Promise<Result>;
     deleteRoutine(id: bigint): Promise<Result>;
