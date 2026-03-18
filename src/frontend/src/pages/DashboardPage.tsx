@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -12,9 +13,12 @@ import {
   Copy,
   History,
   Loader2,
+  Lock,
   Pencil,
   Plus,
+  RefreshCw,
   Shield,
+  ShieldCheck,
   Trash2,
   Wallet,
 } from "lucide-react";
@@ -47,6 +51,7 @@ import {
   useIsAdmin,
   useMarkRoutineDone,
   useMarkRoutineUndone,
+  useRenewSubscription,
   useTransferLiv,
   useUpdateRoutine,
 } from "../hooks/useQueries";
@@ -187,6 +192,186 @@ function HistoryView({ onBack }: { onBack: () => void }) {
 }
 
 // Wallet dropdown panel component
+
+const PAYMENT_ADDRESS =
+  "5677f79bb400519598c0e75be936cafc391a930d21268d6fcf1eee3cb5c9d582";
+
+function RenewalModal({
+  expiryDate,
+  locale,
+  onClose,
+}: {
+  expiryDate: bigint;
+  locale: string;
+  onClose: () => void;
+}) {
+  const renewSub = useRenewSubscription();
+  const [blockIndex, setBlockIndex] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const currentExpiry = formatExpiryDate(expiryDate, locale);
+  const newExpiryMs =
+    Number(expiryDate) / 1_000_000 + 365 * 24 * 60 * 60 * 1000;
+  const newExpiry = new Date(
+    Math.max(newExpiryMs, Date.now() + 365 * 24 * 60 * 60 * 1000),
+  ).toLocaleDateString(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(PAYMENT_ADDRESS);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleRenew = async () => {
+    setError(null);
+    try {
+      await renewSub.mutateAsync(BigInt(blockIndex.trim()));
+      setSuccess(true);
+      setTimeout(() => onClose(), 2000);
+    } catch (e: any) {
+      setError(e?.message ?? "Verification failed.");
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 16 }}
+        transition={{ duration: 0.2 }}
+        className="w-full max-w-md mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="glass-card rounded-2xl p-6 border border-border/40">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center">
+                <RefreshCw className="w-4 h-4 text-gold" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-foreground text-sm">
+                  Extend Access
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  12 months for 1 ICP
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+
+          {success ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center gap-3 py-4"
+            >
+              <div className="w-12 h-12 rounded-full bg-green-accent/20 flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6 text-green-accent" />
+              </div>
+              <p className="font-semibold text-foreground text-sm">
+                Access extended!
+              </p>
+              <p className="text-xs text-muted-foreground">
+                New expiry: {newExpiry}
+              </p>
+            </motion.div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-xs rounded-xl bg-muted/30 border border-border/40 px-3 py-2.5">
+                <span className="text-muted-foreground">Current expiry</span>
+                <span className="text-gold font-medium">{currentExpiry}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs rounded-xl bg-green-accent/5 border border-green-accent/20 px-3 py-2.5">
+                <span className="text-muted-foreground">After renewal</span>
+                <span className="text-green-accent font-medium">
+                  {newExpiry}
+                </span>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-foreground mb-2">
+                  1. Send exactly 1 ICP to:
+                </p>
+                <div className="flex items-center gap-2 rounded-xl bg-muted/40 border border-border/50 px-3 py-2">
+                  <code className="flex-1 text-xs font-mono text-foreground/80 break-all">
+                    {PAYMENT_ADDRESS}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                  >
+                    {copied ? (
+                      <Check className="w-3.5 h-3.5 text-green-accent" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-foreground mb-2">
+                  2. Enter the block index of your transaction:
+                </p>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="Block Index / Transaction ID"
+                  value={blockIndex}
+                  onChange={(e) => setBlockIndex(e.target.value)}
+                  className="bg-muted/30 border-border/50 font-mono text-sm"
+                />
+              </div>
+
+              {error && (
+                <p className="text-xs text-destructive bg-destructive/10 rounded-lg px-3 py-2">
+                  {error}
+                </p>
+              )}
+
+              <Button
+                onClick={handleRenew}
+                disabled={!blockIndex.trim() || renewSub.isPending}
+                className="w-full rounded-xl py-4 font-semibold bg-gold text-primary-foreground hover:opacity-90"
+              >
+                {renewSub.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Verifying…
+                  </>
+                ) : (
+                  "Verify & Extend Access"
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 function WalletDropdown({
   principal,
   onClose,
@@ -506,6 +691,7 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
   const [viewDate, setViewDate] = useState(new Date());
   const [showAdmin, setShowAdmin] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
+  const [showRenewal, setShowRenewal] = useState(false);
   const walletPillRef = useRef<HTMLDivElement>(null);
 
   const principal = identity?.getPrincipal().toString() ?? "";
@@ -669,16 +855,18 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
 
             {/* Subscription expiry badge */}
             {expiryDate !== undefined && (
-              <div
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/10 border border-gold/25 text-xs text-gold/90"
-                title="Subscription expiry"
+              <button
+                type="button"
+                onClick={() => setShowRenewal(true)}
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/10 border border-gold/25 text-xs text-gold/90 hover:bg-gold/20 transition-colors cursor-pointer"
+                title="Click to renew subscription"
                 data-ocid="dashboard.panel"
               >
                 <CalendarCheck className="w-3 h-3" />
                 <span>
                   Access until: {formatExpiryDate(expiryDate, locale)}
                 </span>
-              </div>
+              </button>
             )}
 
             {/* Wallet pill — clickable to open dropdown */}
@@ -1021,6 +1209,16 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
         routine={editingRoutine}
         isSaving={createRoutine.isPending || updateRoutine.isPending}
       />
+
+      <AnimatePresence>
+        {showRenewal && expiryDate !== undefined && (
+          <RenewalModal
+            expiryDate={expiryDate}
+            locale={locale}
+            onClose={() => setShowRenewal(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

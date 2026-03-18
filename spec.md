@@ -1,33 +1,23 @@
 # LivSpan
 
 ## Current State
-The wallet panel in DashboardPage shows the full principal address, LIV token balance, and send/receive views. There is no transaction history. The backend has a `transferLiv` function and a `grantWelcomeLiv` internal function, but neither records transactions.
+The dashboard header shows an "Access until" badge with the subscription expiry date. This badge is static (non-interactive). The backend has `activateSubscription` for new users but no function for renewing an existing subscription.
 
 ## Requested Changes (Diff)
 
 ### Add
-- `LivTransaction` type in backend: `{ id: Nat; from: Text; to: Text; amount: Nat; timestamp: Int; txType: Text }` (txType: "send" | "receive" | "airdrop")
-- `livTransactions` map in backend (per user, list of transactions)
-- `getLivTransactions()` query function returning the caller's transaction history (most recent first, max 50)
-- Record transactions in `transferLiv` for both sender and recipient
-- Record airdrop transaction in `grantWelcomeLiv` for recipient
-- New "History" view in `WalletDropdown` component (4th view state)
-- History button in the main wallet view (alongside Send / Receive)
-- List of transactions showing type icon, amount, counterpart address (shortened), and timestamp
+- Backend: `renewSubscription(blockIndex: Nat64)` function that verifies 1 ICP payment and extends the existing expiry by 12 months (or from now if already expired)
+- Frontend: `useRenewSubscription` hook in useQueries.ts
+- Frontend: `RenewalModal` component in DashboardPage showing current/new expiry, payment address, block index input, and verify button
 
 ### Modify
-- `transferLiv` backend function: after successful transfer, append transaction records for sender ("send") and recipient ("receive")
-- `grantWelcomeLiv` internal function: append airdrop transaction for recipient
-- `WalletDropdown` component: add `history` view state and a History button
+- "Access until" badge in dashboard header: changed from static div to clickable button that opens the RenewalModal
 
 ### Remove
-- Nothing
+- Nothing removed
 
 ## Implementation Plan
-1. Add `LivTransaction` type and `livTransactions` map to backend
-2. Add `getLivTransactions` query function
-3. Update `transferLiv` to record send/receive entries
-4. Update `grantWelcomeLiv` to record airdrop entry
-5. Regenerate backend bindings (generate_motoko_code not needed -- minimal additions)
-6. Add `useGetLivTransactions` query hook in frontend
-7. Add "History" view to `WalletDropdown` with a list of recent transactions
+1. Add `renewSubscription` to backend main.mo
+2. Add `useRenewSubscription` hook to useQueries.ts
+3. Add `RenewalModal` component to DashboardPage.tsx
+4. Make "Access until" badge clickable to open modal

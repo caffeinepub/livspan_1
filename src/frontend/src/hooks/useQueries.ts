@@ -277,6 +277,19 @@ export function useActivateSubscription() {
   });
 }
 
+export function useRenewSubscription() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (blockIndex: bigint) => {
+      if (!actor) throw new Error("Not connected");
+      const result = await (actor as any).renewSubscription(blockIndex);
+      if (result.__kind__ === "err") throw new Error(result.err);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["subscription"] }),
+  });
+}
+
 // Admin hooks
 export function useIsAdmin() {
   const { actor, isFetching: actorFetching } = useActor();

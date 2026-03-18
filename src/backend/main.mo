@@ -877,6 +877,54 @@ actor {
     #ok;
   };
 
+
+  public shared ({ caller }) func renewSubscription(blockIndex : Nat64) : async Result {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can renew subscriptions");
+    };
+
+    let ledger : actor {
+      query_blocks : (GetBlocksArgs) -> async QueryBlocksResponse;
+    } = actor (ledgerCanisterId);
+
+    let response = try {
+      await ledger.query_blocks({
+        start = blockIndex;
+        length = 1;
+      });
+    } catch (e) {
+      return #err("Failed to query ledger: " # e.message());
+    };
+
+    if (response.blocks.size() == 0) {
+      return #err("Block not found");
+    };
+
+    let block = response.blocks[0];
+    let ownerAccountBlob = hexToBlob(ownerAccountId);
+
+    switch (block.transaction.operation) {
+      case (?#Transfer(transfer)) {
+        if (transfer.to != ownerAccountBlob) {
+          return #err("Transfer not to owner account");
+        };
+        if (transfer.amount.e8s < Nat64.fromNat(subscriptionPrice)) {
+          return #err("Insufficient payment amount");
+        };
+        let base = switch (subscriptions.get(caller)) {
+          case (?existing) { if (existing > Time.now()) { existing } else { Time.now() } };
+          case (null) { Time.now() };
+        };
+        let newExpiry = base + subscriptionDuration;
+        subscriptions.add(caller, newExpiry);
+        #ok;
+      };
+      case (_) {
+        return #err("Invalid transaction type");
+      };
+    };
+  };
+
   // Howard Hinnant civil_from_days algorithm -- proven correct for all dates
   func getCurrentDate() : Text {
     let now = Time.now();
