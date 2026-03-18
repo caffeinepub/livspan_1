@@ -94,7 +94,7 @@ actor {
     restingHr : ?Float; // bpm
     fastingStart : ?Text;
     fastingEnd : ?Text;
-    calories : ?Float; // New calories field
+    calories : ?Float;
   };
 
   // Subscription Types
@@ -139,6 +139,16 @@ actor {
   let tokenName = "LIV";
   let tokenSymbol = "LIV";
 
+  // LIV Transaction History Types
+  public type LivTransaction = {
+    id : Nat;
+    from : Text;
+    to : Text;
+    amount : Nat;
+    timestamp : Int;
+    txType : Text; // "send" | "receive" | "airdrop"
+  };
+
   // Constants
   let ownerAccountId = "5677f79bb400519598c0e75be936cafc391a930d21268d6fcf1eee3cb5c9d582";
   let subscriptionPrice = 100_000_000;
@@ -163,6 +173,8 @@ actor {
   var livTokensClaimed = false;
   var adminPrincipalForLiv : ?Principal = null;
   let livWelcomeGranted = Map.empty<Principal, Bool>();
+  let livTransactions = Map.empty<Principal, [LivTransaction]>();
+  var nextTxId = 0;
 
   // Persistent admin state
   let accessControlState = AccessControl.initState();
@@ -225,6 +237,22 @@ actor {
     };
   };
 
+  // Internal helper: append transaction for a user
+  func appendTx(user : Principal, tx : LivTransaction) {
+    let current = switch (livTransactions.get(user)) {
+      case (?txs) { txs };
+      case (null) { [] };
+    };
+    // Keep most recent first, cap at 100 entries
+    let updated = [tx].concat(current);
+    let capped = if (updated.size() > 100) {
+      Array.tabulate(100, func(i) { updated[i] });
+    } else {
+      updated;
+    };
+    livTransactions.add(user, capped);
+  };
+
   public shared ({ caller }) func transferLiv(to : Principal, amount : Nat) : async Result {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can transfer LIV tokens");
@@ -245,6 +273,30 @@ actor {
         let newRecipientBalance = recipientBalance + amount;
         livBalances.add(to, newRecipientBalance);
 
+        let now = Time.now();
+        let txId = nextTxId;
+        nextTxId += 1;
+
+        // Record sender transaction
+        appendTx(caller, {
+          id = txId;
+          from = caller.toText();
+          to = to.toText();
+          amount;
+          timestamp = now;
+          txType = "send";
+        });
+
+        // Record recipient transaction
+        appendTx(to, {
+          id = txId;
+          from = caller.toText();
+          to = to.toText();
+          amount;
+          timestamp = now;
+          txType = "receive";
+        });
+
         #ok;
       };
     };
@@ -259,7 +311,7 @@ actor {
     switch (adminPrincipalForLiv) {
       case (null) { return };
       case (?admin) {
-        let grantAmount = 1; // 1 LIV (tokenDecimals = 0)
+        let grantAmount = 1;
         let adminBalance = switch (livBalances.get(admin)) {
           case (?b) { b };
           case (null) { 0 };
@@ -272,8 +324,34 @@ actor {
           };
           livBalances.add(user, userBalance + grantAmount);
           livWelcomeGranted.add(user, true);
+
+          let now = Time.now();
+          let txId = nextTxId;
+          nextTxId += 1;
+
+          // Record airdrop for recipient
+          appendTx(user, {
+            id = txId;
+            from = admin.toText();
+            to = user.toText();
+            amount = grantAmount;
+            timestamp = now;
+            txType = "airdrop";
+          });
         };
       };
+    };
+  };
+
+  public query ({ caller }) func getLivTransactions() : async [LivTransaction] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view transactions");
+    };
+    switch (livTransactions.get(caller)) {
+      case (?txs) {
+        if (txs.size() > 50) { Array.tabulate(50, func(i) { txs[i] }) } else { txs };
+      };
+      case (null) { [] };
     };
   };
 
@@ -803,17 +881,16 @@ actor {
   func getCurrentDate() : Text {
     let now = Time.now();
     let now_s : Nat = Int.abs(now / 1_000_000_000).toNat();
-    // Shift Unix epoch (1970-01-01) to civil epoch (0000-03-01)
     let z : Int = (now_s / 86_400) + 719468;
 
     let era : Int = (if (z >= 0) { z } else { z - 146096 }) / 146097;
-    let doe : Nat = Int.abs(z - era * 146097); // day of era [0, 146096]
-    let yoe : Nat = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365; // year of era [0, 399]
+    let doe : Nat = Int.abs(z - era * 146097);
+    let yoe : Nat = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
     let y : Int = yoe + era * 400;
-    let doy : Nat = doe - (365 * yoe + yoe / 4 - yoe / 100); // day of year from Mar 1 [0, 365]
-    let mp : Nat = (5 * doy + 2) / 153; // internal month index [0, 11]
-    let d : Nat = doy - (153 * mp + 2) / 5 + 1; // day of month [1, 31]
-    let m : Int = if (mp < 10) { mp + 3 } else { mp - 9 }; // calendar month [1, 12]
+    let doy : Nat = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp : Nat = (5 * doy + 2) / 153;
+    let d : Nat = doy - (153 * mp + 2) / 5 + 1;
+    let m : Int = if (mp < 10) { mp + 3 } else { mp - 9 };
     let finalYear : Int = if (m <= 2) { y + 1 } else { y };
 
     let yearText = finalYear.toText();
@@ -823,4 +900,3 @@ actor {
     yearText # "-" # monthText # "-" # dayText;
   };
 };
-

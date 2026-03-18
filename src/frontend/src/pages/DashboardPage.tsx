@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Coins,
   Copy,
+  History,
   Loader2,
   Pencil,
   Plus,
@@ -40,6 +41,7 @@ import {
   useClaimFounderLivTokens,
   useCreateRoutine,
   useDeleteRoutine,
+  useGetLivTransactions,
   useGetMyLivBalance,
   useGetRoutines,
   useIsAdmin,
@@ -83,6 +85,107 @@ function formatLivBalance(balance: bigint): string {
   return Number(balance).toLocaleString();
 }
 
+function formatTxTimestamp(ns: bigint): string {
+  const ms = Number(ns) / 1_000_000;
+  const d = new Date(ms);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${dd}.${mm}.${yyyy} ${hh}:${min}`;
+}
+
+function shortenAddress(addr: string): string {
+  if (addr.length <= 12) return addr;
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
+function HistoryView({ onBack }: { onBack: () => void }) {
+  const { data: txs = [], isLoading } = useGetLivTransactions();
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <p className="text-sm font-semibold text-foreground">
+          Transaction History
+        </p>
+      </div>
+      {isLoading ? (
+        <div
+          className="flex items-center justify-center py-8"
+          data-ocid="wallet.loading_state"
+        >
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : txs.length === 0 ? (
+        <div
+          className="flex flex-col items-center justify-center py-8 gap-2"
+          data-ocid="wallet.empty_state"
+        >
+          <History className="w-8 h-8 text-muted-foreground/40" />
+          <p className="text-xs text-muted-foreground">No transactions yet</p>
+        </div>
+      ) : (
+        <div className="max-h-64 overflow-y-auto flex flex-col gap-1 pr-0.5">
+          {txs.map((tx, i) => {
+            const isSend = tx.txType === "send";
+            const isAirdrop = tx.txType === "airdrop";
+            const counterpart = isSend ? tx.to : tx.from;
+            return (
+              <div
+                key={String(tx.id)}
+                className="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-muted/30 transition-colors"
+                data-ocid={`wallet.item.${i + 1}`}
+              >
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                    isSend
+                      ? "bg-red-500/15 text-red-400"
+                      : isAirdrop
+                        ? "bg-yellow-500/15 text-yellow-400"
+                        : "bg-blue-500/15 text-blue-400"
+                  }`}
+                >
+                  {isSend ? (
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  ) : isAirdrop ? (
+                    <Coins className="w-3.5 h-3.5" />
+                  ) : (
+                    <ArrowDownLeft className="w-3.5 h-3.5" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-mono text-muted-foreground truncate">
+                    {isSend ? "To: " : "From: "}
+                    {shortenAddress(counterpart)}
+                  </p>
+                  <p className="text-xs text-muted-foreground/60">
+                    {formatTxTimestamp(tx.timestamp)}
+                  </p>
+                </div>
+                <span
+                  className={`text-xs font-semibold shrink-0 ${isSend ? "text-red-400" : isAirdrop ? "text-yellow-400" : "text-blue-400"}`}
+                >
+                  {isSend ? "-" : "+"}
+                  {Number(tx.amount).toLocaleString()} LIV
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Wallet dropdown panel component
 function WalletDropdown({
   principal,
@@ -95,7 +198,9 @@ function WalletDropdown({
   const { data: livBalance, isLoading: livLoading } = useGetMyLivBalance();
   const transferLiv = useTransferLiv();
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<"main" | "send" | "receive">("main");
+  const [view, setView] = useState<"main" | "send" | "receive" | "history">(
+    "main",
+  );
   const [sendTo, setSendTo] = useState("");
   const [sendAmount, setSendAmount] = useState("");
 
@@ -207,6 +312,8 @@ function WalletDropdown({
               </button>
             </div>
           </div>
+        ) : view === "history" ? (
+          <HistoryView onBack={() => setView("main")} />
         ) : view === "receive" ? (
           <div>
             <div className="flex items-center gap-2 mb-4">
@@ -347,6 +454,16 @@ function WalletDropdown({
                 Receive
               </button>
             </div>
+            {/* History button */}
+            <button
+              type="button"
+              onClick={() => setView("history")}
+              className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-semibold text-sm border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-all"
+              data-ocid="wallet.secondary_button"
+            >
+              <History className="w-3.5 h-3.5" />
+              Transaction History
+            </button>
           </>
         )}
       </motion.div>

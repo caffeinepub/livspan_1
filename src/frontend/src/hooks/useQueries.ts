@@ -361,3 +361,15 @@ export function useTransferLiv() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["livBalance"] }),
   });
 }
+
+export function useGetLivTransactions() {
+  const { actor, isFetching } = useActor();
+  return useQuery({
+    queryKey: ["livTransactions"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as any).getLivTransactions();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
