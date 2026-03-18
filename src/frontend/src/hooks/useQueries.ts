@@ -340,3 +340,24 @@ export function useClaimFounderLivTokens() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["livBalance"] }),
   });
 }
+
+export function useTransferLiv() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      to,
+      amount,
+    }: {
+      to: string;
+      amount: bigint;
+    }) => {
+      if (!actor) throw new Error("Not connected");
+      const { Principal } = await import("@dfinity/principal");
+      const toPrincipal = Principal.fromText(to);
+      const result = await actor.transferLiv(toPrincipal, amount);
+      if (result.__kind__ === "err") throw new Error(result.err);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["livBalance"] }),
+  });
+}

@@ -161,8 +161,6 @@ actor {
   // LIV Token State
   let livBalances = Map.empty<Principal, Nat>();
   var livTokensClaimed = false;
-  var adminPrincipalForLiv : ?Principal = null;
-  let livWelcomeGranted = Map.empty<Principal, Bool>();
 
   // Persistent admin state
   let accessControlState = AccessControl.initState();
@@ -198,7 +196,6 @@ actor {
     } else {
       livBalances.add(caller, totalLivSupply);
       livTokensClaimed := true;
-      adminPrincipalForLiv := ?caller;
       #ok;
     };
   };
@@ -246,33 +243,6 @@ actor {
         livBalances.add(to, newRecipientBalance);
 
         #ok;
-      };
-    };
-  };
-
-  // Internal: grant 1 LIV to a new user from admin wallet (idempotent)
-  func grantWelcomeLiv(user : Principal) {
-    switch (livWelcomeGranted.get(user)) {
-      case (?true) { return };
-      case (_) {};
-    };
-    switch (adminPrincipalForLiv) {
-      case (null) { return };
-      case (?admin) {
-        let grantAmount = 1; // 1 LIV (tokenDecimals = 0)
-        let adminBalance = switch (livBalances.get(admin)) {
-          case (?b) { b };
-          case (null) { 0 };
-        };
-        if (adminBalance >= grantAmount) {
-          livBalances.add(admin, adminBalance - grantAmount);
-          let userBalance = switch (livBalances.get(user)) {
-            case (?b) { b };
-            case (null) { 0 };
-          };
-          livBalances.add(user, userBalance + grantAmount);
-          livWelcomeGranted.add(user, true);
-        };
       };
     };
   };
@@ -779,7 +749,6 @@ actor {
         };
         let expiryTime = Time.now() + subscriptionDuration;
         subscriptions.add(caller, expiryTime);
-        grantWelcomeLiv(caller);
         #ok;
       };
       case (_) {
@@ -795,7 +764,6 @@ actor {
 
     let expiryTime = Time.now() + subscriptionDuration;
     subscriptions.add(user, expiryTime);
-    grantWelcomeLiv(user);
     #ok;
   };
 
