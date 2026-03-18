@@ -90,6 +90,18 @@ export default function LandingPage() {
               >
                 🇬🇧 EN
               </button>
+              <button
+                type="button"
+                onClick={() => setLang("ru")}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  lang === "ru"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-ocid="landing.toggle"
+              >
+                🇷🇺 RU
+              </button>
             </div>
             <Button
               data-ocid="landing.primary_button"

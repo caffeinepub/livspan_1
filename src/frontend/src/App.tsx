@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { Loader2 } from "lucide-react";
+import DisclaimerModal, { useDisclaimer } from "./components/DisclaimerModal";
 import PaywallScreen from "./components/PaywallScreen";
 import { DailyHealthProvider } from "./hooks/useDailyHealth";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
@@ -10,6 +11,7 @@ import LandingPage from "./pages/LandingPage";
 
 function AuthenticatedApp() {
   const { data: subscription, isLoading, refetch } = useCheckSubscription();
+  const { accepted, accept } = useDisclaimer();
 
   if (isLoading || !subscription) {
     return (
@@ -36,7 +38,12 @@ function AuthenticatedApp() {
     );
   }
 
-  return <DashboardPage expiryDate={subscription.expiryDate} />;
+  return (
+    <>
+      {!accepted && <DisclaimerModal onAccept={accept} />}
+      <DashboardPage expiryDate={subscription.expiryDate} />
+    </>
+  );
 }
 
 export default function App() {

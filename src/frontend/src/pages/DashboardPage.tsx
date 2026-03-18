@@ -664,7 +664,7 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
   const { clear, identity } = useInternetIdentity();
   const { lang, setLang } = useLanguage();
   const tr = t[lang];
-  const locale = lang === "de" ? "de-DE" : "en-US";
+  const locale = lang === "de" ? "de-DE" : lang === "ru" ? "ru-RU" : "en-US";
   const queryClient = useQueryClient();
   const { data: routines = [], isLoading } = useGetRoutines();
   const { toggle, isChecked } = useDailyCardChecks();
@@ -850,6 +850,18 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
                 data-ocid="dashboard.toggle"
               >
                 🇬🇧 EN
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang("ru")}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  lang === "ru"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-ocid="dashboard.toggle"
+              >
+                🇷🇺 RU
               </button>
             </div>
 

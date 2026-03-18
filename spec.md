@@ -1,23 +1,22 @@
 # LivSpan
 
 ## Current State
-The dashboard header shows an "Access until" badge with the subscription expiry date. This badge is static (non-interactive). The backend has `activateSubscription` for new users but no function for renewing an existing subscription.
+The app supports two languages: English (en) and German (de), selectable per account via the menu. Translations are stored in `src/frontend/src/i18n.ts`.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Backend: `renewSubscription(blockIndex: Nat64)` function that verifies 1 ICP payment and extends the existing expiry by 12 months (or from now if already expired)
-- Frontend: `useRenewSubscription` hook in useQueries.ts
-- Frontend: `RenewalModal` component in DashboardPage showing current/new expiry, payment address, block index input, and verify button
+- Russian (`ru`) language option in `i18n.ts` with full translations for all keys including AI tips
+- Russian flag/label in the language selector UI
 
 ### Modify
-- "Access until" badge in dashboard header: changed from static div to clickable button that opens the RenewalModal
+- `i18n.ts`: add `ru` block with all translated strings
+- Language selector component: add Russian option
 
 ### Remove
-- Nothing removed
+- Nothing
 
 ## Implementation Plan
-1. Add `renewSubscription` to backend main.mo
-2. Add `useRenewSubscription` hook to useQueries.ts
-3. Add `RenewalModal` component to DashboardPage.tsx
-4. Make "Access until" badge clickable to open modal
+1. Add `ru` translation block to `i18n.ts` with all keys translated to Russian
+2. Update language selector in the menu to include Russian (RU / 🇷🇺)
+3. Ensure language persists per account in backend (already supported)
