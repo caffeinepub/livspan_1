@@ -134,6 +134,11 @@ export interface SubscriptionStatus {
     expiryDate?: bigint;
     isActive: boolean;
 }
+export interface SubscriptionEntry {
+    user: Principal;
+    expiryDate: bigint;
+    isActive: boolean;
+}
 export interface UserProfile {
     heightCm?: bigint;
     bodyFatPct?: number;
@@ -157,6 +162,7 @@ export interface backendInterface {
     createRoutine(title: string, time: string, description: string): Promise<Result>;
     deleteDiaryEntry(id: bigint): Promise<Result>;
     deleteRoutine(id: bigint): Promise<Result>;
+    getAdminSubscriptionList(): Promise<Array<SubscriptionEntry>>;
     getAllHealthData(): Promise<Array<DailyHealthData>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -303,6 +309,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.deleteRoutine(arg0);
             return from_candid_Result_n1(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAdminSubscriptionList(): Promise<Array<SubscriptionEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAdminSubscriptionList();
+                return result as any;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAdminSubscriptionList();
+            return result as any;
         }
     }
     async getAllHealthData(): Promise<Array<DailyHealthData>> {

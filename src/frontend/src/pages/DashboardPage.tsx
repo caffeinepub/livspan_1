@@ -2,15 +2,14 @@ import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
-  BookOpen,
   CalendarCheck,
   Check,
   ChevronLeft,
   ChevronRight,
   Loader2,
-  MapPin,
   Pencil,
   Plus,
+  Shield,
   Trash2,
   Wallet,
 } from "lucide-react";
@@ -20,6 +19,7 @@ import { toast } from "sonner";
 import type { RoutineWithStatus } from "../backend.d";
 import DiaryCard from "../components/DiaryCard";
 import FastingCard from "../components/FastingCard";
+import InsightsCard from "../components/InsightsCard";
 import LongevityScoreCard from "../components/LongevityScoreCard";
 import LongevityScoreHistoryCard from "../components/LongevityScoreHistoryCard";
 import MovementCard from "../components/MovementCard";
@@ -35,11 +35,13 @@ import {
   useCreateRoutine,
   useDeleteRoutine,
   useGetRoutines,
+  useIsAdmin,
   useMarkRoutineDone,
   useMarkRoutineUndone,
   useUpdateRoutine,
 } from "../hooks/useQueries";
 import { t } from "../i18n";
+import AdminPage from "./AdminPage";
 
 function getTodayString() {
   const now = new Date();
@@ -85,11 +87,13 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
   const deleteRoutine = useDeleteRoutine();
   const markDone = useMarkRoutineDone();
   const markUndone = useMarkRoutineUndone();
+  const { data: isAdmin = false } = useIsAdmin();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRoutine, setEditingRoutine] =
     useState<RoutineWithStatus | null>(null);
   const [viewDate, setViewDate] = useState(new Date());
+  const [showAdmin, setShowAdmin] = useState(false);
 
   const principal = identity?.getPrincipal().toString() ?? "";
   const todayStr = getTodayString();
@@ -179,6 +183,10 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
       n.setDate(d.getDate() + 1);
       return n;
     });
+
+  if (showAdmin) {
+    return <AdminPage onBack={() => setShowAdmin(false)} />;
+  }
 
   return (
     <div
@@ -275,6 +283,18 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
                 {shortenPrincipal(principal)}
               </span>
             </div>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAdmin(true)}
+                className="rounded-full border-gold/50 text-gold hover:bg-gold/10 text-xs gap-1.5"
+                data-ocid="admin.open_modal_button"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                Admin
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -454,16 +474,7 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
               icon={<Activity className="w-5 h-5" />}
               description={tr.biomarkers_desc}
             />
-            <PlaceholderCard
-              title={tr.insights_title}
-              icon={<BookOpen className="w-5 h-5" />}
-              description={tr.insights_desc}
-            />
-            <PlaceholderCard
-              title={tr.journeys_title}
-              icon={<MapPin className="w-5 h-5" />}
-              description={tr.journeys_desc}
-            />
+            <InsightsCard />
           </motion.div>
         </div>
       </main>

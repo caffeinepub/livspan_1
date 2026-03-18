@@ -4,6 +4,7 @@ import type {
   DiaryEntry,
   RoutineWithStatus,
   ScoreEntry,
+  SubscriptionEntry,
   SubscriptionStatus,
   UserProfile,
 } from "../backend.d";
@@ -273,5 +274,43 @@ export function useActivateSubscription() {
       if (result.__kind__ === "err") throw new Error(result.err);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["subscription"] }),
+  });
+}
+
+// Admin hooks
+export function useIsAdmin() {
+  const { actor, isFetching: actorFetching } = useActor();
+  return useQuery<boolean>({
+    queryKey: ["isAdmin"],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.isCallerAdmin();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+export function useAdminActivateSubscription() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (user: import("@dfinity/principal").Principal) => {
+      if (!actor) throw new Error("Not connected");
+      const result = await actor.adminActivateSubscription(user);
+      if (result.__kind__ === "err") throw new Error(result.err);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["subscription"] }),
+  });
+}
+
+export function useAdminSubscriptionList() {
+  const { actor, isFetching: actorFetching } = useActor();
+  return useQuery<SubscriptionEntry[]>({
+    queryKey: ["adminSubscriptionList"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAdminSubscriptionList();
+    },
+    enabled: !!actor && !actorFetching,
   });
 }

@@ -47,6 +47,11 @@ export interface SubscriptionStatus {
   'expiryDate' : [] | [bigint],
   'isActive' : boolean,
 }
+export interface SubscriptionEntry {
+  'user' : Principal,
+  'expiryDate' : bigint,
+  'isActive' : boolean,
+}
 export interface UserProfile {
   'heightCm' : [] | [bigint],
   'bodyFatPct' : [] | [number],
@@ -68,6 +73,7 @@ export interface _SERVICE {
   'createRoutine' : ActorMethod<[string, string, string], Result>,
   'deleteDiaryEntry' : ActorMethod<[bigint], Result>,
   'deleteRoutine' : ActorMethod<[bigint], Result>,
+  'getAdminSubscriptionList' : ActorMethod<[], Array<SubscriptionEntry>>,
   'getAllHealthData' : ActorMethod<[], Array<DailyHealthData>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,

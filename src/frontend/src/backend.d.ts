@@ -52,6 +52,11 @@ export interface SubscriptionStatus {
     expiryDate?: bigint;
     isActive: boolean;
 }
+export interface SubscriptionEntry {
+    user: Principal;
+    expiryDate: bigint;
+    isActive: boolean;
+}
 export interface UserProfile {
     heightCm?: bigint;
     bodyFatPct?: number;
@@ -75,6 +80,7 @@ export interface backendInterface {
     deleteDiaryEntry(id: bigint): Promise<Result>;
     deleteRoutine(id: bigint): Promise<Result>;
     getAllHealthData(): Promise<Array<DailyHealthData>>;
+    getAdminSubscriptionList(): Promise<Array<SubscriptionEntry>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getDailyHealthData(date: string): Promise<DailyHealthData | null>;

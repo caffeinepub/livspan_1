@@ -1,6 +1,7 @@
 import Int "mo:core/Int";
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
+import Nat8 "mo:core/Nat8";
 import Text "mo:core/Text";
 import Array "mo:core/Array";
 import Time "mo:core/Time";
@@ -104,6 +105,13 @@ actor {
     expiryDate : ?Int; // Expiry timestamp in nanoseconds
   };
 
+  // Admin subscription list type
+  public type SubscriptionEntry = {
+    user : Principal;
+    expiryDate : Int;
+    isActive : Bool;
+  };
+
   // ICP Ledger Types
   type AccountIdentifier = Blob;
   type Tokens = { e8s : Nat64 };
@@ -145,6 +153,24 @@ actor {
   let routines = Map.empty<Nat, RoutineInternal>();
   let completions = Map.empty<Principal, Map.Map<Nat, Text>>();
   var nextRoutineId = 0;
+
+  // Admin subscription list
+  public query ({ caller }) func getAdminSubscriptionList() : async [SubscriptionEntry] {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can view subscription list");
+    };
+
+    let currentTime = Time.now();
+    subscriptions.entries().toArray().map(
+      func((user, expiry)) {
+        {
+          user;
+          expiryDate = expiry;
+          isActive = expiry > currentTime;
+        };
+      }
+    );
+  };
 
   // User Profile Functions
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
@@ -354,7 +380,6 @@ actor {
       case (?entries) { entries };
     };
 
-    // Remove existing entry for the same date if exists
     let filteredEntries = currentEntries.filter(
       func(entry) { entry.date != date }
     );
@@ -508,7 +533,6 @@ actor {
       case (?entries) { entries };
     };
 
-    // Remove existing entry for the same date if exists
     let filteredEntries = currentEntries.filter(
       func(entry) { entry.date != date }
     );
@@ -558,10 +582,9 @@ actor {
       };
       case (?expiry) {
         if (expiry > currentTime) {
-          let expiryDateInt = expiry;
           {
             isActive = true;
-            expiryDate = ?expiryDateInt;
+            expiryDate = ?expiry;
           };
         } else {
           {
@@ -573,20 +596,29 @@ actor {
     };
   };
 
+  func hexCharToNat8(c : Char) : Nat8 {
+    let code = c.toNat32().toNat();
+    if (code >= 48 and code <= 57) {
+      Nat8.fromNat(code - 48)
+    } else if (code >= 97 and code <= 102) {
+      Nat8.fromNat(code - 87)
+    } else if (code >= 65 and code <= 70) {
+      Nat8.fromNat(code - 55)
+    } else {
+      0
+    }
+  };
+
   func hexToBlob(hex : Text) : Blob {
-    let chars = hex.chars();
+    let chars = hex.chars().toArray();
     var bytes : [Nat8] = [];
-    var buffer = "";
-    for (c in chars) {
-      buffer #= Text.fromChar(c);
-      if (buffer.size() == 2) {
-        let byte = switch (Nat.fromText("0x" # buffer)) {
-          case (?n) { Nat8.fromNat(n) };
-          case null { 0 : Nat8 };
-        };
-        bytes := bytes.concat([byte]);
-        buffer := "";
-      };
+    var i = 0;
+    while (i + 1 < chars.size()) {
+      let hi = hexCharToNat8(chars[i]);
+      let lo = hexCharToNat8(chars[i + 1]);
+      let byte : Nat8 = hi * 16 + lo;
+      bytes := bytes.concat([byte]);
+      i += 2;
     };
     Blob.fromArray(bytes);
   };
@@ -606,7 +638,7 @@ actor {
         length = 1;
       });
     } catch (e) {
-      return #err("Failed to query ledger: " # Error.message(e));
+      return #err("Failed to query ledger: " # e.message());
     };
 
     if (response.blocks.size() == 0) {
