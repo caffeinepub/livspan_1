@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import PaywallScreen from "./components/PaywallScreen";
 import { DailyHealthProvider } from "./hooks/useDailyHealth";
 import { useInternetIdentity } from "./hooks/useInternetIdentity";
+import { LanguageProvider } from "./hooks/useLanguage";
 import { useCheckSubscription } from "./hooks/useQueries";
 import DashboardPage from "./pages/DashboardPage";
 import LandingPage from "./pages/LandingPage";
@@ -17,7 +18,7 @@ function AuthenticatedApp() {
           <img
             src="/assets/uploads/IMG_8398-1.png"
             alt="LivSpan"
-            className="w-12 h-12 object-contain animate-pulse"
+            className="w-16 h-16 object-contain animate-pulse"
           />
           <Loader2 className="w-5 h-5 animate-spin text-green-accent" />
         </div>
@@ -49,7 +50,7 @@ export default function App() {
           <img
             src="/assets/uploads/IMG_8398-1.png"
             alt="LivSpan"
-            className="w-12 h-12 object-contain animate-pulse"
+            className="w-16 h-16 object-contain animate-pulse"
           />
           <Loader2 className="w-5 h-5 animate-spin text-green-accent" />
         </div>
@@ -58,9 +59,11 @@ export default function App() {
   }
 
   return (
-    <DailyHealthProvider>
-      {isAuthenticated ? <AuthenticatedApp /> : <LandingPage />}
-      <Toaster position="top-right" />
-    </DailyHealthProvider>
+    <LanguageProvider>
+      <DailyHealthProvider>
+        {isAuthenticated ? <AuthenticatedApp /> : <LandingPage />}
+        <Toaster position="top-right" />
+      </DailyHealthProvider>
+    </LanguageProvider>
   );
 }

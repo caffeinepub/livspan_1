@@ -73,6 +73,7 @@ export const idlService = IDL.Service({
   'adminActivateSubscription' : IDL.Func([IDL.Principal], [Result], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'checkSubscription' : IDL.Func([], [SubscriptionStatus], ['query']),
+  'claimFounderLivTokens' : IDL.Func([], [Result], []),
   'createRoutine' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Result], []),
   'deleteDiaryEntry' : IDL.Func([IDL.Nat], [Result], []),
   'deleteRoutine' : IDL.Func([IDL.Nat], [Result], []),
@@ -90,6 +91,19 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getDiaryEntriesForCaller' : IDL.Func([], [IDL.Vec(DiaryEntry)], ['query']),
+  'getLivBalance' : IDL.Func([IDL.Principal], [IDL.Nat], ['query']),
+  'getLivTokenInfo' : IDL.Func(
+      [],
+      [
+        IDL.Record({
+          'decimals' : IDL.Nat,
+          'name' : IDL.Text,
+          'symbol' : IDL.Text,
+        }),
+      ],
+      ['query'],
+    ),
+  'getMyLivBalance' : IDL.Func([], [IDL.Nat], ['query']),
   'getRoutinesForCaller' : IDL.Func(
       [],
       [IDL.Vec(RoutineWithStatus)],
@@ -102,6 +116,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getSingleRoutine' : IDL.Func([IDL.Nat], [RoutineWithStatus], ['query']),
+  'getTotalLivSupply' : IDL.Func([], [IDL.Nat], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -133,6 +148,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'saveDailyScore' : IDL.Func([IDL.Text, IDL.Float64], [Result], []),
+  'transferLiv' : IDL.Func([IDL.Principal, IDL.Nat], [Result], []),
   'updateDiaryEntry' : IDL.Func([IDL.Nat, IDL.Text], [Result], []),
   'updateRoutine' : IDL.Func(
       [IDL.Nat, IDL.Text, IDL.Text, IDL.Text],
@@ -206,6 +222,7 @@ export const idlFactory = ({ IDL }) => {
     'adminActivateSubscription' : IDL.Func([IDL.Principal], [Result], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'checkSubscription' : IDL.Func([], [SubscriptionStatus], ['query']),
+    'claimFounderLivTokens' : IDL.Func([], [Result], []),
     'createRoutine' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Result], []),
     'deleteDiaryEntry' : IDL.Func([IDL.Nat], [Result], []),
     'deleteRoutine' : IDL.Func([IDL.Nat], [Result], []),
@@ -223,6 +240,19 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getDiaryEntriesForCaller' : IDL.Func([], [IDL.Vec(DiaryEntry)], ['query']),
+    'getLivBalance' : IDL.Func([IDL.Principal], [IDL.Nat], ['query']),
+    'getLivTokenInfo' : IDL.Func(
+        [],
+        [
+          IDL.Record({
+            'decimals' : IDL.Nat,
+            'name' : IDL.Text,
+            'symbol' : IDL.Text,
+          }),
+        ],
+        ['query'],
+      ),
+    'getMyLivBalance' : IDL.Func([], [IDL.Nat], ['query']),
     'getRoutinesForCaller' : IDL.Func(
         [],
         [IDL.Vec(RoutineWithStatus)],
@@ -235,6 +265,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getSingleRoutine' : IDL.Func([IDL.Nat], [RoutineWithStatus], ['query']),
+    'getTotalLivSupply' : IDL.Func([], [IDL.Nat], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
@@ -266,6 +297,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'saveDailyScore' : IDL.Func([IDL.Text, IDL.Float64], [Result], []),
+    'transferLiv' : IDL.Func([IDL.Principal, IDL.Nat], [Result], []),
     'updateDiaryEntry' : IDL.Func([IDL.Nat, IDL.Text], [Result], []),
     'updateRoutine' : IDL.Func(
         [IDL.Nat, IDL.Text, IDL.Text, IDL.Text],

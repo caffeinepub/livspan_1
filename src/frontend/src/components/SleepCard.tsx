@@ -19,12 +19,6 @@ export default function SleepCard() {
   const qualityPct = Math.min(100, Math.round((quality / 10) * 100));
 
   const qualityLabel = (q: number) => {
-    if (lang === "de") {
-      if (q <= 3) return "Schlecht";
-      if (q <= 6) return "Mittel";
-      if (q <= 8) return "Gut";
-      return "Sehr gut";
-    }
     if (q <= 3) return "Poor";
     if (q <= 6) return "Fair";
     if (q <= 8) return "Good";
@@ -128,7 +122,7 @@ export default function SleepCard() {
         </div>
 
         {/* AI Tips */}
-        <AiTip tips={aiTips} lang={lang} />
+        <AiTip tips={aiTips} />
       </div>
     </div>
   );

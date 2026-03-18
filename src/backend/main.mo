@@ -11,12 +11,12 @@ import Order "mo:core/Order";
 import Principal "mo:core/Principal";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Migration "migration";
 import Runtime "mo:core/Runtime";
 import Nat64 "mo:core/Nat64";
 import Blob "mo:core/Blob";
 
-
-
+(with migration = Migration.run)
 actor {
   // User Profile Types
   public type UserProfile = {
@@ -133,6 +133,12 @@ actor {
     blocks : [Block];
   };
 
+  // LIV Token Types
+  let totalLivSupply = 21_000_000;
+  let tokenDecimals = 0;
+  let tokenName = "LIV";
+  let tokenSymbol = "LIV";
+
   // Constants
   let ownerAccountId = "5677f79bb400519598c0e75be936cafc391a930d21268d6fcf1eee3cb5c9d582";
   let subscriptionPrice = 100_000_000;
@@ -151,6 +157,10 @@ actor {
   let routines = Map.empty<Nat, RoutineInternal>();
   let completions = Map.empty<Principal, Map.Map<Nat, Text>>();
   var nextRoutineId = 0;
+
+  // LIV Token State
+  let livBalances = Map.empty<Principal, Nat>();
+  var livTokensClaimed = false;
 
   // Persistent admin state
   let accessControlState = AccessControl.initState();
@@ -172,6 +182,81 @@ actor {
         };
       }
     );
+  };
+
+  // LIV Token Functions
+
+  public shared ({ caller }) func claimFounderLivTokens() : async Result {
+    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+      Runtime.trap("Unauthorized: Only admins can claim founder LIV tokens");
+    };
+
+    if (livTokensClaimed) {
+      #err("Founder LIV tokens already claimed");
+    } else {
+      livBalances.add(caller, totalLivSupply);
+      livTokensClaimed := true;
+      #ok;
+    };
+  };
+
+  public query ({ caller }) func getMyLivBalance() : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view LIV balances");
+    };
+
+    switch (livBalances.get(caller)) {
+      case (?balance) { balance };
+      case (null) { 0 };
+    };
+  };
+
+  public query ({ caller }) func getLivBalance(p : Principal) : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view LIV balances");
+    };
+
+    switch (livBalances.get(p)) {
+      case (?balance) { balance };
+      case (null) { 0 };
+    };
+  };
+
+  public shared ({ caller }) func transferLiv(to : Principal, amount : Nat) : async Result {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can transfer LIV tokens");
+    };
+
+    switch (livBalances.get(caller)) {
+      case (null) { #err("Insufficient balance") };
+      case (?balance) {
+        if (balance < amount) { return #err("Insufficient balance") };
+
+        let newSenderBalance = balance - amount;
+        livBalances.add(caller, newSenderBalance);
+
+        let recipientBalance = switch (livBalances.get(to)) {
+          case (?b) { b };
+          case (null) { 0 };
+        };
+        let newRecipientBalance = recipientBalance + amount;
+        livBalances.add(to, newRecipientBalance);
+
+        #ok;
+      };
+    };
+  };
+
+  public query func getTotalLivSupply() : async Nat {
+    totalLivSupply;
+  };
+
+  public query func getLivTokenInfo() : async { name : Text; symbol : Text; decimals : Nat } {
+    {
+      name = tokenName;
+      symbol = tokenSymbol;
+      decimals = tokenDecimals;
+    };
   };
 
   // User Profile Functions
@@ -682,77 +767,28 @@ actor {
     #ok;
   };
 
+  // Howard Hinnant civil_from_days algorithm -- proven correct for all dates
   func getCurrentDate() : Text {
     let now = Time.now();
-    let now_s = Int.abs(now / 1_000_000_000).toNat();
+    let now_s : Nat = Int.abs(now / 1_000_000_000).toNat();
+    // Shift Unix epoch (1970-01-01) to civil epoch (0000-03-01)
+    let z : Int = (now_s / 86_400) + 719468;
 
-    let daysSinceEpoch = now_s / 86_400;
-    let daysOf400YearCycles = daysSinceEpoch / 146_097;
-    let dayOf400YearCycle = daysSinceEpoch % 146_097;
+    let era : Int = (if (z >= 0) { z } else { z - 146096 }) / 146097;
+    let doe : Nat = Int.abs(z - era * 146097); // day of era [0, 146096]
+    let yoe : Nat = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365; // year of era [0, 399]
+    let y : Int = yoe + era * 400;
+    let doy : Nat = doe - (365 * yoe + yoe / 4 - yoe / 100); // day of year from Mar 1 [0, 365]
+    let mp : Nat = (5 * doy + 2) / 153; // internal month index [0, 11]
+    let d : Nat = doy - (153 * mp + 2) / 5 + 1; // day of month [1, 31]
+    let m : Int = if (mp < 10) { mp + 3 } else { mp - 9 }; // calendar month [1, 12]
+    let finalYear : Int = if (m <= 2) { y + 1 } else { y };
 
-    let daysOf100YearCycle = dayOf400YearCycle / 36_524;
-    let dayOf100YearCycle = dayOf400YearCycle % 36_524;
-
-    let daysOf4YearCycle = dayOf100YearCycle / 1_461;
-    let dayOf4YearCycle = dayOf100YearCycle % 1_461;
-
-    let daysOf1YearCycle = dayOf4YearCycle / 365;
-    let dayOfYear = dayOf4YearCycle % 365;
-
-    var year = 1970 + daysOf400YearCycles * 400 + daysOf100YearCycle * 100 + daysOf4YearCycle * 4 + daysOf1YearCycle;
-    var dayOfYearVar = dayOfYear;
-
-    if (not (daysOf100YearCycle == 4 or daysOf1YearCycle == 4)) {
-      year += 1;
-    };
-
-    let months = [
-      31, // Jan
-      28, // Feb
-      31, // Mar
-      30, // Apr
-      31, // May
-      30, // Jun
-      31, // Jul
-      31, // Aug
-      30, // Sep
-      31, // Oct
-      30, // Nov
-      31,
-    ]; // Dec
-
-    var month = 0;
-    var day = 0;
-
-    var currentMonth = 0;
-    var currentMonthDays = 0;
-    var found = false;
-
-    for (days in months.values()) {
-      if (not found) {
-        var daysInMonth = days;
-        if (currentMonth == 1 and year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)) {
-          daysInMonth += 1;
-        };
-
-        if (dayOfYearVar < daysInMonth) {
-          month := currentMonth + 1;
-          day := dayOfYearVar + 1;
-          found := true;
-        } else {
-          currentMonth += 1;
-          currentMonthDays := days;
-          dayOfYearVar -= daysInMonth;
-        };
-      };
-    };
-
-    let yearText = year.toText();
-    let monthText = if (month < 10) { "0" # month.toText() } else {
-      month.toText();
-    };
-    let dayText = if (day < 10) { "0" # day.toText() } else { day.toText() };
+    let yearText = finalYear.toText();
+    let monthText = if (m < 10) { "0" # m.toText() } else { m.toText() };
+    let dayText = if (d < 10) { "0" # d.toText() } else { d.toText() };
 
     yearText # "-" # monthText # "-" # dayText;
   };
 };
+

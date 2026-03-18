@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Check, Copy, Loader2, Lock, ShieldCheck } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
-import { useLanguage } from "../hooks/useLanguage";
 import { useActivateSubscription } from "../hooks/useQueries";
 
 const PAYMENT_ADDRESS =
@@ -12,15 +11,12 @@ const PAYMENT_ADDRESS =
 export default function PaywallScreen({
   onSuccess,
 }: { onSuccess: () => void }) {
-  const { lang, setLang } = useLanguage();
   const activate = useActivateSubscription();
 
   const [blockIndex, setBlockIndex] = useState("");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  const de = lang === "de";
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(PAYMENT_ADDRESS);
@@ -36,10 +32,7 @@ export default function PaywallScreen({
       setSuccess(true);
       setTimeout(() => onSuccess(), 1800);
     } catch (e: any) {
-      setError(
-        e?.message ??
-          (de ? "Verifizierung fehlgeschlagen." : "Verification failed."),
-      );
+      setError(e?.message ?? "Verification failed.");
     }
   };
 
@@ -58,37 +51,11 @@ export default function PaywallScreen({
             <img
               src="/assets/uploads/IMG_8398-1.png"
               alt="LivSpan"
-              className="w-7 h-7 object-contain"
+              className="w-9 h-9 object-contain"
             />
             <span className="font-display font-bold text-lg text-foreground tracking-tight">
               LivSpan
             </span>
-          </div>
-          <div className="flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => setLang("de")}
-              className={`px-3 py-1.5 transition-colors ${
-                lang === "de"
-                  ? "bg-green-accent/20 text-green-accent"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              data-ocid="paywall.toggle"
-            >
-              DE
-            </button>
-            <button
-              type="button"
-              onClick={() => setLang("en")}
-              className={`px-3 py-1.5 transition-colors ${
-                lang === "en"
-                  ? "bg-green-accent/20 text-green-accent"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              data-ocid="paywall.toggle"
-            >
-              EN
-            </button>
           </div>
         </div>
       </header>
@@ -109,12 +76,10 @@ export default function PaywallScreen({
                 <Lock className="w-7 h-7 text-gold" />
               </div>
               <h1 className="font-display font-bold text-2xl text-foreground mb-2">
-                {de ? "Zugang freischalten" : "Unlock Access"}
+                {"Unlock Access"}
               </h1>
               <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
-                {de
-                  ? "Erhalte 12 Monate Zugang zur LivSpan App für 1 ICP."
-                  : "Get 12 months access to LivSpan App for 1 ICP."}
+                {"Get 12 months access to LivSpan App for 1 ICP."}
               </p>
             </div>
 
@@ -129,12 +94,10 @@ export default function PaywallScreen({
                   <ShieldCheck className="w-7 h-7 text-green-accent" />
                 </div>
                 <p className="font-semibold text-foreground">
-                  {de ? "Zugang aktiviert!" : "Access activated!"}
+                  {"Access activated!"}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {de
-                    ? "Du wirst weitergeleitet…"
-                    : "Redirecting to dashboard…"}
+                  {"Redirecting to dashboard…"}
                 </p>
               </motion.div>
             ) : (
@@ -146,9 +109,7 @@ export default function PaywallScreen({
                       1
                     </span>
                     <span className="text-sm font-semibold text-foreground">
-                      {de
-                        ? "Sende genau 1 ICP an diese Adresse:"
-                        : "Send exactly 1 ICP to this address:"}
+                      {"Send exactly 1 ICP to this address:"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 rounded-xl bg-muted/40 border border-border/50 px-3 py-2.5">
@@ -159,7 +120,7 @@ export default function PaywallScreen({
                       type="button"
                       onClick={handleCopy}
                       className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                      aria-label={de ? "Adresse kopieren" : "Copy address"}
+                      aria-label={"Copy address"}
                       data-ocid="paywall.primary_button"
                     >
                       {copied ? (
@@ -178,19 +139,13 @@ export default function PaywallScreen({
                       2
                     </span>
                     <span className="text-sm font-semibold text-foreground">
-                      {de
-                        ? "Gib die Block-Index deiner Transaktion ein:"
-                        : "Enter the block index of your transaction:"}
+                      {"Enter the block index of your transaction:"}
                     </span>
                   </div>
                   <Input
                     type="number"
                     min="0"
-                    placeholder={
-                      de
-                        ? "Block Index / Transaktions-ID"
-                        : "Block Index / Transaction ID"
-                    }
+                    placeholder={"Block Index / Transaction ID"}
                     value={blockIndex}
                     onChange={(e) => setBlockIndex(e.target.value)}
                     className="bg-muted/30 border-border/50 font-mono"
@@ -220,10 +175,8 @@ export default function PaywallScreen({
                   {activate.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {de ? "Verifiziere…" : "Verifying…"}
+                      {"Verifying…"}
                     </>
-                  ) : de ? (
-                    "Zahlung verifizieren"
                   ) : (
                     "Verify Payment"
                   )}

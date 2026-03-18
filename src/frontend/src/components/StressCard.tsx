@@ -5,14 +5,11 @@ import { useLanguage } from "../hooks/useLanguage";
 import { t } from "../i18n";
 import AiTip from "./AiTip";
 
-function bpCategory(systolic: number, diastolic: number, lang: "de" | "en") {
-  if (systolic < 120 && diastolic < 80)
-    return lang === "de" ? "Optimal" : "Optimal";
-  if (systolic < 130 && diastolic < 80)
-    return lang === "de" ? "Normal" : "Normal";
-  if (systolic < 140 || diastolic < 90)
-    return lang === "de" ? "Erhöht" : "Elevated";
-  return lang === "de" ? "Hoch" : "High";
+function bpCategory(systolic: number, diastolic: number) {
+  if (systolic < 120 && diastolic < 80) return "Optimal";
+  if (systolic < 130 && diastolic < 80) return "Normal";
+  if (systolic < 140 || diastolic < 90) return "Elevated";
+  return "High";
 }
 
 function bpColor(systolic: number, diastolic: number) {
@@ -22,12 +19,12 @@ function bpColor(systolic: number, diastolic: number) {
   return "text-red-400";
 }
 
-function hrCategory(hr: number, lang: "de" | "en") {
-  if (hr < 50) return lang === "de" ? "Athletisch" : "Athletic";
-  if (hr < 60) return lang === "de" ? "Sehr gut" : "Excellent";
-  if (hr < 70) return lang === "de" ? "Gut" : "Good";
-  if (hr < 80) return lang === "de" ? "Normal" : "Normal";
-  return lang === "de" ? "Erhöht" : "Elevated";
+function hrCategory(hr: number) {
+  if (hr < 50) return "Athletic";
+  if (hr < 60) return "Excellent";
+  if (hr < 70) return "Good";
+  if (hr < 80) return "Normal";
+  return "Elevated";
 }
 
 function hrColor(hr: number) {
@@ -116,7 +113,7 @@ export default function StressCard() {
               </span>
               {" – "}
               <span className={bpColorClass}>
-                {bpCategory(systolic, diastolic, lang)}
+                {bpCategory(systolic, diastolic)}
               </span>
             </span>
           </div>
@@ -148,9 +145,7 @@ export default function StressCard() {
                 {restingHr} bpm
               </span>
               {" – "}
-              <span className={hrColorClass}>
-                {hrCategory(restingHr, lang)}
-              </span>
+              <span className={hrColorClass}>{hrCategory(restingHr)}</span>
             </span>
           </div>
           <Slider
@@ -192,7 +187,7 @@ export default function StressCard() {
           <div className="w-px h-8 bg-border/30" />
           <div className="text-center">
             <p className={`text-xs font-semibold ${bpColorClass}`}>
-              {bpCategory(systolic, diastolic, lang)}
+              {bpCategory(systolic, diastolic)}
             </p>
             <p className="text-[10px] text-muted-foreground">
               {tr.stress_status}
@@ -201,7 +196,7 @@ export default function StressCard() {
         </div>
 
         {/* AI Tips */}
-        <AiTip tips={aiTips} lang={lang} />
+        <AiTip tips={aiTips} />
       </div>
     </div>
   );

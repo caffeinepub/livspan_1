@@ -48,7 +48,7 @@ function shortenPrincipal(p: string) {
 
 export default function AdminPage({ onBack }: AdminPageProps) {
   const { lang } = useLanguage();
-  const locale = lang === "de" ? "de-DE" : "en-US";
+  const locale = "en-US";
   const [principalInput, setPrincipalInput] = useState("");
   const [inputError, setInputError] = useState("");
   const [activatedList, setActivatedList] = useState<

@@ -328,7 +328,7 @@ export default function NutritionCard() {
         </div>
 
         {/* AI Tips */}
-        <AiTip tips={aiTips} lang={lang} />
+        <AiTip tips={aiTips} />
       </div>
     </div>
   );

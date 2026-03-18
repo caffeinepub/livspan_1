@@ -159,6 +159,7 @@ export interface backendInterface {
     adminActivateSubscription(user: Principal): Promise<Result>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     checkSubscription(): Promise<SubscriptionStatus>;
+    claimFounderLivTokens(): Promise<Result>;
     createRoutine(title: string, time: string, description: string): Promise<Result>;
     deleteDiaryEntry(id: bigint): Promise<Result>;
     deleteRoutine(id: bigint): Promise<Result>;
@@ -168,10 +169,18 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getDailyHealthData(date: string): Promise<DailyHealthData | null>;
     getDiaryEntriesForCaller(): Promise<Array<DiaryEntry>>;
+    getLivBalance(p: Principal): Promise<bigint>;
+    getLivTokenInfo(): Promise<{
+        decimals: bigint;
+        name: string;
+        symbol: string;
+    }>;
+    getMyLivBalance(): Promise<bigint>;
     getRoutinesForCaller(): Promise<Array<RoutineWithStatus>>;
     getScoreHistoryForCaller(): Promise<Array<ScoreEntry>>;
     getScoreHistoryForUser(user: Principal): Promise<Array<ScoreEntry>>;
     getSingleRoutine(id: bigint): Promise<RoutineWithStatus>;
+    getTotalLivSupply(): Promise<bigint>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     markRoutineDone(id: bigint, date: string): Promise<Result>;
@@ -179,6 +188,7 @@ export interface backendInterface {
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveDailyHealthData(date: string, sleepDuration: number | null, sleepQuality: number | null, protein: number | null, veggies: number | null, water: number | null, sport: string | null, intensity: number | null, movementDuration: number | null, systolic: number | null, diastolic: number | null, restingHr: number | null, fastingStart: string | null, fastingEnd: string | null, calories: number | null): Promise<Result>;
     saveDailyScore(date: string, score: number): Promise<Result>;
+    transferLiv(to: Principal, amount: bigint): Promise<Result>;
     updateDiaryEntry(id: bigint, text: string): Promise<Result>;
     updateRoutine(id: bigint, title: string, time: string, description: string): Promise<Result>;
 }
@@ -267,6 +277,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.checkSubscription();
             return from_candid_SubscriptionStatus_n5(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async claimFounderLivTokens(): Promise<Result> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.claimFounderLivTokens();
+                return from_candid_Result_n1(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.claimFounderLivTokens();
+            return from_candid_Result_n1(this._uploadFile, this._downloadFile, result);
         }
     }
     async createRoutine(arg0: string, arg1: string, arg2: string): Promise<Result> {
@@ -395,6 +419,52 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getLivBalance(arg0: Principal): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getLivBalance(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getLivBalance(arg0);
+            return result;
+        }
+    }
+    async getLivTokenInfo(): Promise<{
+        decimals: bigint;
+        name: string;
+        symbol: string;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getLivTokenInfo();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getLivTokenInfo();
+            return result;
+        }
+    }
+    async getMyLivBalance(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMyLivBalance();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMyLivBalance();
+            return result;
+        }
+    }
     async getRoutinesForCaller(): Promise<Array<RoutineWithStatus>> {
         if (this.processError) {
             try {
@@ -448,6 +518,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getSingleRoutine(arg0);
+            return result;
+        }
+    }
+    async getTotalLivSupply(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getTotalLivSupply();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getTotalLivSupply();
             return result;
         }
     }
@@ -546,6 +630,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.saveDailyScore(arg0, arg1);
+            return from_candid_Result_n1(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async transferLiv(arg0: Principal, arg1: bigint): Promise<Result> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.transferLiv(arg0, arg1);
+                return from_candid_Result_n1(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.transferLiv(arg0, arg1);
             return from_candid_Result_n1(this._uploadFile, this._downloadFile, result);
         }
     }

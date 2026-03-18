@@ -161,7 +161,7 @@ export default function MovementCard() {
           />
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
             <span>0</span>
-            <span className="text-blue-400/70">Ziel: ≥30 min</span>
+            <span className="text-blue-400/70">Target: ≥30 min</span>
             <span>180</span>
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function MovementCard() {
         </div>
 
         {/* AI Tips */}
-        <AiTip tips={aiTips} lang={lang} />
+        <AiTip tips={aiTips} />
       </div>
     </div>
   );

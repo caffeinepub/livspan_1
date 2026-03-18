@@ -1,37 +1,35 @@
 # LivSpan
 
 ## Current State
-The app has a full health-tracking dashboard with backend persistence, Internet Identity login, and role-based access control. All dashboard features (nutrition, sleep, stress, exercise, fasting, diary, LivSpan-Score) are fully functional.
+The top navbar shows a shortened principal and a wallet icon in a small pill. The backend has no LIV token logic. The admin can manage subscriptions.
 
 ## Requested Changes (Diff)
 
 ### Add
-- ICP payment-based subscription system: users must pay 1 ICP to access the dashboard
-- Subscription duration: 12 months from payment date
-- Owner wallet (Account ID): `5677f79bb400519598c0e75be936cafc391a930d21268d6fcf1eee3cb5c9d582`
-- Backend subscription storage: map of Principal -> expiry timestamp (nanoseconds)
-- Backend function: `checkSubscription()` - returns subscription status and expiry date for caller
-- Backend function: `activateSubscription(blockIndex: Nat64)` - user provides their ICP transaction block index; backend calls ICP ledger canister to verify payment of >= 1 ICP to owner account, then activates 12-month subscription
-- Backend function: `adminActivateSubscription(user: Principal)` - admin can manually activate a subscription
-- Frontend paywall screen: shown to logged-in users with no active subscription
-  - Displays owner account ID for payment
-  - Shows required amount (1 ICP)
-  - Input field for block index (transaction ID)
-  - "Verify Payment" button
-  - Loading/success/error feedback
-  - Shows subscription expiry once active
-- Subscription expiry shown in the dashboard header/personal data area
+- **LIV Token in Backend:** ICRC-1-style token with 21,000,000 total supply. All tokens initially minted into the founder (admin) wallet via a one-time `claimFounderLivTokens()` call (only callable once, only by admin). Functions: `getMyLivBalance()`, `getLivBalance(principal)`, `transferLiv(to, amount)`, `claimFounderLivTokens()`.
+- **Wallet Dropdown Panel in Navbar:** Clicking the wallet pill opens a dropdown that shows:
+  - Full wallet address (principal) with copy-to-clipboard button
+  - LIV token balance (fetched from backend)
+  - "View on OISY" link for ICP balance
+  - Close button
 
 ### Modify
-- Dashboard: gated behind active subscription check; users without subscription see paywall instead
+- Wallet pill in navbar: make it a clickable button that opens the wallet dropdown
+- Wallet dropdown auto-closes on outside click
 
 ### Remove
 - Nothing removed
 
 ## Implementation Plan
-1. Add `subscriptions` map (Principal -> Int expiry timestamp) to backend
-2. Add ICP ledger inter-canister call interface to verify transactions
-3. Implement `checkSubscription`, `activateSubscription(blockIndex)`, `adminActivateSubscription` backend functions
-4. Update frontend: after login, check subscription status; show paywall if not subscribed, dashboard if subscribed
-5. Build paywall UI with payment instructions, block index input, and verify button
-6. Show subscription expiry date in dashboard
+1. Add LIV token state and functions to `main.mo`:
+   - `livBalances: Map<Principal, Nat>`
+   - `livTokensClaimed: Bool` flag
+   - `claimFounderLivTokens()`: admin-only, one-time, mints 21_000_000 to caller
+   - `getMyLivBalance()`: query, returns caller's LIV balance
+   - `getLivBalance(p)`: query, returns any principal's LIV balance
+   - `transferLiv(to, amount)`: update, transfers LIV between principals
+2. Frontend: Add `WalletPanel` dropdown component in `DashboardPage.tsx` navbar
+   - Shows full principal with copy button
+   - Shows LIV balance via `useQuery` on `getMyLivBalance`
+   - Shows OISY link
+   - Animated open/close

@@ -262,9 +262,8 @@ export default function FastingCard() {
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            {lang === "de"
-              ? "Fastenzeiten über Mitternacht werden unterstützt (z.B. 20:00 – 12:00)."
-              : "Fasting windows spanning midnight are supported (e.g. 20:00 – 12:00)."}
+            "Fasting windows spanning midnight are supported (e.g. 20:00 –
+            12:00)."
           </p>
           <div className="flex gap-2">
             <Button

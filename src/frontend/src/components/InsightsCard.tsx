@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Lightbulb, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import type { DailyHealthData, ScoreEntry } from "../backend.d";
 import { useActor } from "../hooks/useActor";
-import { useLanguage } from "../hooks/useLanguage";
 
 type Status = "good" | "warning" | "bad";
 
@@ -194,7 +193,6 @@ function StatusIcon({ status }: { status: Status }) {
 }
 
 export default function InsightsCard() {
-  const { lang } = useLanguage();
   const { actor, isFetching: actorFetching } = useActor();
 
   const { data: healthData = [], isLoading: healthLoading } = useQuery<
@@ -236,12 +234,10 @@ export default function InsightsCard() {
         </div>
         <div>
           <h3 className="font-display font-semibold text-sm text-foreground">
-            {lang === "de" ? "Aktuelle Erkenntnisse" : "Weekly Insights"}
+            {"Weekly Insights"}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {lang === "de"
-              ? "Deine letzten 7 Tage im Überblick"
-              : "Your last 7 days at a glance"}
+            {"Your last 7 days at a glance"}
           </p>
         </div>
       </div>
@@ -264,12 +260,10 @@ export default function InsightsCard() {
         <div className="text-center py-6" data-ocid="insights.empty_state">
           <div className="text-3xl mb-3">📊</div>
           <p className="text-sm text-foreground font-medium mb-1">
-            {lang === "de" ? "Noch zu wenig Daten" : "Not enough data yet"}
+            {"Not enough data yet"}
           </p>
           <p className="text-xs text-muted-foreground max-w-[220px] mx-auto">
-            {lang === "de"
-              ? "Tracke mindestens 2 Tage, um Erkenntnisse zu sehen."
-              : "Track at least 2 days to see insights."}
+            {"Track at least 2 days to see insights."}
           </p>
         </div>
       )}
@@ -288,10 +282,10 @@ export default function InsightsCard() {
               </span>
               <div className="flex-1 min-w-0">
                 <span className="text-xs font-medium text-foreground">
-                  {lang === "de" ? insight.label.de : insight.label.en}
+                  {insight.label.en}
                 </span>
                 <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-                  {lang === "de" ? insight.detail.de : insight.detail.en}
+                  {insight.detail.en}
                 </p>
               </div>
               <div
@@ -300,11 +294,7 @@ export default function InsightsCard() {
                 }`}
               >
                 <StatusIcon status={insight.status} />
-                <span>
-                  {lang === "de"
-                    ? statusLabel[insight.status].de
-                    : statusLabel[insight.status].en}
-                </span>
+                <span>{statusLabel[insight.status].en}</span>
               </div>
             </div>
           ))}
@@ -314,9 +304,7 @@ export default function InsightsCard() {
       {/* Footer hint */}
       {!isLoading && hasEnoughData && (
         <p className="text-[10px] text-muted-foreground mt-4 pt-3 border-t border-border/30 text-center">
-          {lang === "de"
-            ? `Basierend auf ${daysWithData} Tagen in den letzten 7 Tagen`
-            : `Based on ${daysWithData} days in the last 7 days`}
+          {`Based on ${daysWithData} days in the last 7 days`}
         </p>
       )}
     </div>

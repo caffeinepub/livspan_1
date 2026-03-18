@@ -70,6 +70,7 @@ export interface _SERVICE {
   'adminActivateSubscription' : ActorMethod<[Principal], Result>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'checkSubscription' : ActorMethod<[], SubscriptionStatus>,
+  'claimFounderLivTokens' : ActorMethod<[], Result>,
   'createRoutine' : ActorMethod<[string, string, string], Result>,
   'deleteDiaryEntry' : ActorMethod<[bigint], Result>,
   'deleteRoutine' : ActorMethod<[bigint], Result>,
@@ -79,10 +80,17 @@ export interface _SERVICE {
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getDailyHealthData' : ActorMethod<[string], [] | [DailyHealthData]>,
   'getDiaryEntriesForCaller' : ActorMethod<[], Array<DiaryEntry>>,
+  'getLivBalance' : ActorMethod<[Principal], bigint>,
+  'getLivTokenInfo' : ActorMethod<
+    [],
+    { 'decimals' : bigint, 'name' : string, 'symbol' : string }
+  >,
+  'getMyLivBalance' : ActorMethod<[], bigint>,
   'getRoutinesForCaller' : ActorMethod<[], Array<RoutineWithStatus>>,
   'getScoreHistoryForCaller' : ActorMethod<[], Array<ScoreEntry>>,
   'getScoreHistoryForUser' : ActorMethod<[Principal], Array<ScoreEntry>>,
   'getSingleRoutine' : ActorMethod<[bigint], RoutineWithStatus>,
+  'getTotalLivSupply' : ActorMethod<[], bigint>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'markRoutineDone' : ActorMethod<[bigint, string], Result>,
@@ -109,6 +117,7 @@ export interface _SERVICE {
     Result
   >,
   'saveDailyScore' : ActorMethod<[string, number], Result>,
+  'transferLiv' : ActorMethod<[Principal, bigint], Result>,
   'updateDiaryEntry' : ActorMethod<[bigint, string], Result>,
   'updateRoutine' : ActorMethod<[bigint, string, string, string], Result>,
 }

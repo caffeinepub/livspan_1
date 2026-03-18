@@ -3,15 +3,12 @@ import { useState } from "react";
 
 interface AiTipProps {
   tips: string[];
-  lang: "de" | "en";
 }
 
-export default function AiTip({ tips, lang }: AiTipProps) {
+export default function AiTip({ tips }: AiTipProps) {
   const [open, setOpen] = useState(false);
 
   if (!tips || tips.length === 0) return null;
-
-  const label = lang === "de" ? "KI-Ratschlag" : "AI Tip";
 
   return (
     <div className="mt-3 rounded-xl border border-violet-500/30 bg-violet-500/5 overflow-hidden">
@@ -22,7 +19,7 @@ export default function AiTip({ tips, lang }: AiTipProps) {
       >
         <span className="text-base leading-none">🤖</span>
         <span className="text-xs font-semibold text-violet-300 flex-1">
-          {label}
+          AI Tip
         </span>
         {open ? (
           <ChevronUp className="w-3.5 h-3.5 text-violet-400" />

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Loader2, Shield, TrendingUp, Wallet, Zap } from "lucide-react";
+import { Activity, Loader2, Shield, TrendingUp } from "lucide-react";
 import { motion } from "motion/react";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useLanguage } from "../hooks/useLanguage";
@@ -23,7 +23,7 @@ export default function LandingPage() {
       desc: tr.feature_biomarker_desc,
     },
     {
-      icon: <Zap className="w-5 h-5" />,
+      icon: <Activity className="w-5 h-5" />,
       title: tr.feature_journeys_title,
       desc: tr.feature_journeys_desc,
     },
@@ -49,51 +49,53 @@ export default function LandingPage() {
             <img
               src="/assets/uploads/IMG_8398-1.png"
               alt="LivSpan leaf"
-              className="w-7 h-7 object-contain"
+              className="w-9 h-9 object-contain"
             />
             <span className="font-display font-bold text-lg text-foreground tracking-tight">
               LivSpan
             </span>
           </div>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-            <span className="text-green-accent font-medium">{tr.nav_home}</span>
-            <span className="hover:text-foreground transition-colors cursor-default">
-              {tr.nav_journeys}
+
+          {/* Nav + Language selector */}
+          <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span className="hidden md:inline text-green-accent font-medium">
+              {tr.nav_home}
             </span>
           </nav>
+
           <div className="flex items-center gap-3">
             {/* Language toggle */}
-            <div className="flex items-center rounded-full border border-border/50 bg-muted/30 overflow-hidden text-xs font-semibold">
+            <div className="flex items-center gap-1 bg-muted/40 rounded-full p-0.5 border border-border/30">
               <button
                 type="button"
                 onClick={() => setLang("de")}
-                className={`px-3 py-1.5 transition-colors ${
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                   lang === "de"
-                    ? "bg-green-accent/20 text-green-accent"
+                    ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-ocid="landing.toggle"
               >
-                DE
+                🇩🇪 DE
               </button>
               <button
                 type="button"
                 onClick={() => setLang("en")}
-                className={`px-3 py-1.5 transition-colors ${
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                   lang === "en"
-                    ? "bg-green-accent/20 text-green-accent"
+                    ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-ocid="landing.toggle"
               >
-                EN
+                🇬🇧 EN
               </button>
             </div>
             <Button
+              data-ocid="landing.primary_button"
               onClick={login}
               disabled={isLoggingIn}
-              className="rounded-full px-5 bg-gold text-primary-foreground hover:opacity-90 font-semibold text-sm"
-              data-ocid="landing.primary_button"
+              className="bg-green-accent text-background hover:bg-green-accent/90 font-semibold text-sm px-5"
             >
               {isLoggingIn ? (
                 <>
@@ -101,10 +103,7 @@ export default function LandingPage() {
                   {tr.connecting}
                 </>
               ) : (
-                <>
-                  <Wallet className="w-4 h-4 mr-2" />
-                  {tr.connect_wallet}
-                </>
+                tr.connect_wallet
               )}
             </Button>
           </div>
@@ -114,71 +113,61 @@ export default function LandingPage() {
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="max-w-3xl"
+          className="max-w-2xl mx-auto"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-green-accent/30 bg-green-accent/10 text-green-accent text-xs font-medium mb-8">
-            <Zap className="w-3.5 h-3.5" />
-            {tr.tagline}
+          <div className="mb-6 flex justify-center">
+            <img
+              src="/assets/uploads/IMG_8398-1.png"
+              alt="LivSpan"
+              className="w-20 h-20 object-contain drop-shadow-lg"
+            />
           </div>
-
-          <h1 className="font-display font-bold text-5xl md:text-6xl lg:text-7xl text-foreground leading-tight mb-6">
+          <p className="text-xs font-semibold uppercase tracking-widest text-green-accent mb-4">
+            {tr.tagline}
+          </p>
+          <h1 className="font-display text-4xl sm:text-5xl font-bold text-foreground leading-tight mb-3">
             {tr.hero_title_1}
-            <br />
-            <span
-              style={{
-                background:
-                  "linear-gradient(90deg, oklch(0.76 0.14 148), oklch(0.75 0.1 75))",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              {tr.hero_title_2}
-            </span>
           </h1>
-
-          <p className="text-muted-foreground text-lg leading-relaxed max-w-xl mx-auto mb-10">
+          <h2 className="font-display text-3xl sm:text-4xl font-semibold text-muted-foreground mb-6">
+            {tr.hero_title_2}
+          </h2>
+          <p className="text-base text-muted-foreground leading-relaxed mb-10 max-w-xl mx-auto">
             {tr.hero_sub}
           </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              onClick={login}
-              disabled={isLoggingIn}
-              size="lg"
-              className="rounded-full px-8 py-6 text-base font-semibold bg-gold text-primary-foreground hover:opacity-90 shadow-glow"
-              data-ocid="landing.primary_button"
-            >
-              {isLoggingIn ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  {tr.connecting}
-                </>
-              ) : (
-                <>
-                  <Wallet className="w-5 h-5 mr-2" />
-                  {tr.connect_wallet_start}
-                </>
-              )}
-            </Button>
-          </div>
+          <Button
+            data-ocid="landing.connect_button"
+            onClick={login}
+            disabled={isLoggingIn}
+            size="lg"
+            className="bg-green-accent text-background hover:bg-green-accent/90 font-semibold px-8 py-3 text-base rounded-xl"
+          >
+            {isLoggingIn ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                {tr.connecting}
+              </>
+            ) : (
+              tr.connect_wallet_start
+            )}
+          </Button>
         </motion.div>
 
         {/* Feature cards */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-          className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl w-full mt-20"
+          transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+          className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-4xl w-full"
         >
           {features.map((f) => (
             <div key={f.title} className="glass-card rounded-2xl p-5 text-left">
-              <div className="w-9 h-9 rounded-xl bg-green-accent/15 flex items-center justify-center text-green-accent mb-3">
+              <div className="w-9 h-9 rounded-lg bg-green-accent/15 flex items-center justify-center text-green-accent mb-3">
                 {f.icon}
               </div>
-              <h3 className="font-display font-semibold text-sm text-foreground mb-1.5">
+              <h3 className="font-display font-semibold text-foreground text-sm mb-1.5">
                 {f.title}
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">

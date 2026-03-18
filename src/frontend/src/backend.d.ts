@@ -76,6 +76,7 @@ export interface backendInterface {
     adminActivateSubscription(user: Principal): Promise<Result>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     checkSubscription(): Promise<SubscriptionStatus>;
+    claimFounderLivTokens(): Promise<Result>;
     createRoutine(title: string, time: string, description: string): Promise<Result>;
     deleteDiaryEntry(id: bigint): Promise<Result>;
     deleteRoutine(id: bigint): Promise<Result>;
@@ -85,10 +86,18 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getDailyHealthData(date: string): Promise<DailyHealthData | null>;
     getDiaryEntriesForCaller(): Promise<Array<DiaryEntry>>;
+    getLivBalance(p: Principal): Promise<bigint>;
+    getLivTokenInfo(): Promise<{
+        decimals: bigint;
+        name: string;
+        symbol: string;
+    }>;
+    getMyLivBalance(): Promise<bigint>;
     getRoutinesForCaller(): Promise<Array<RoutineWithStatus>>;
     getScoreHistoryForCaller(): Promise<Array<ScoreEntry>>;
     getScoreHistoryForUser(user: Principal): Promise<Array<ScoreEntry>>;
     getSingleRoutine(id: bigint): Promise<RoutineWithStatus>;
+    getTotalLivSupply(): Promise<bigint>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     markRoutineDone(id: bigint, date: string): Promise<Result>;
@@ -96,6 +105,7 @@ export interface backendInterface {
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     saveDailyHealthData(date: string, sleepDuration: number | null, sleepQuality: number | null, protein: number | null, veggies: number | null, water: number | null, sport: string | null, intensity: number | null, movementDuration: number | null, systolic: number | null, diastolic: number | null, restingHr: number | null, fastingStart: string | null, fastingEnd: string | null, calories: number | null): Promise<Result>;
     saveDailyScore(date: string, score: number): Promise<Result>;
+    transferLiv(to: Principal, amount: bigint): Promise<Result>;
     updateDiaryEntry(id: bigint, text: string): Promise<Result>;
     updateRoutine(id: bigint, title: string, time: string, description: string): Promise<Result>;
 }

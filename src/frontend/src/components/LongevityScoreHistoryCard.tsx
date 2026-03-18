@@ -57,7 +57,7 @@ export default function LongevityScoreHistoryCard() {
               {tr.score_history_title}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {lang === "de" ? "Letzte 30 Tage" : "Last 30 days"}
+              "Last 30 days"
             </p>
           </div>
         </div>
@@ -105,9 +105,7 @@ export default function LongevityScoreHistoryCard() {
             {tr.score_history_empty}
           </p>
           <p className="text-xs text-muted-foreground/60 mt-1 max-w-[180px] leading-relaxed">
-            {lang === "de"
-              ? "Täglich eintragen, um den Fortschritt zu sehen."
-              : "Track daily to see your progress."}
+            "Track daily to see your progress."
           </p>
         </div>
       ) : (

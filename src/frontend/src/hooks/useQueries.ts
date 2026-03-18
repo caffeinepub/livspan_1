@@ -314,3 +314,29 @@ export function useAdminSubscriptionList() {
     enabled: !!actor && !actorFetching,
   });
 }
+
+// LIV Token hooks
+export function useGetMyLivBalance() {
+  const { actor, isFetching: actorFetching } = useActor();
+  return useQuery<bigint>({
+    queryKey: ["livBalance"],
+    queryFn: async () => {
+      if (!actor) return BigInt(0);
+      return actor.getMyLivBalance();
+    },
+    enabled: !!actor && !actorFetching,
+  });
+}
+
+export function useClaimFounderLivTokens() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error("Not connected");
+      const result = await actor.claimFounderLivTokens();
+      if (result.__kind__ === "err") throw new Error(result.err);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["livBalance"] }),
+  });
+}
