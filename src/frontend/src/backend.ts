@@ -117,6 +117,11 @@ export interface ScoreEntry {
     date: string;
     score: number;
 }
+export interface SubscriptionEntry {
+    expiryDate: bigint;
+    user: Principal;
+    isActive: boolean;
+}
 export interface DiaryEntry {
     id: bigint;
     text: string;
@@ -132,11 +137,6 @@ export interface RoutineWithStatus {
 }
 export interface SubscriptionStatus {
     expiryDate?: bigint;
-    isActive: boolean;
-}
-export interface SubscriptionEntry {
-    user: Principal;
-    expiryDate: bigint;
     isActive: boolean;
 }
 export interface UserProfile {
@@ -315,14 +315,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getAdminSubscriptionList();
-                return result as any;
+                return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getAdminSubscriptionList();
-            return result as any;
+            return result;
         }
     }
     async getAllHealthData(): Promise<Array<DailyHealthData>> {

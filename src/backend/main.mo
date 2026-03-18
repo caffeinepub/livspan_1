@@ -15,6 +15,8 @@ import Runtime "mo:core/Runtime";
 import Nat64 "mo:core/Nat64";
 import Blob "mo:core/Blob";
 
+
+
 actor {
   // User Profile Types
   public type UserProfile = {
@@ -25,10 +27,6 @@ actor {
     weightKg : ?Float;
     bodyFatPct : ?Float;
   };
-
-  // Initialize the access control state
-  let accessControlState = AccessControl.initState();
-  include MixinAuthorization(accessControlState);
 
   // Routine Types
   public type Routine = {
@@ -154,6 +152,10 @@ actor {
   let completions = Map.empty<Principal, Map.Map<Nat, Text>>();
   var nextRoutineId = 0;
 
+  // Persistent admin state
+  let accessControlState = AccessControl.initState();
+  include MixinAuthorization(accessControlState);
+
   // Admin subscription list
   public query ({ caller }) func getAdminSubscriptionList() : async [SubscriptionEntry] {
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
@@ -270,6 +272,8 @@ actor {
       Runtime.trap("Unauthorized: Only users can view routines");
     };
 
+    let today = getCurrentDate();
+
     routines.values().toArray().filter(
       func(r) { r.owner == caller }
     ).map(
@@ -279,7 +283,9 @@ actor {
           case (?userCompletions) {
             switch (userCompletions.get(internal.routine.id)) {
               case (null) { false };
-              case (?_) { true };
+              case (?date) {
+                date == today;
+              };
             };
           };
         };
@@ -674,5 +680,79 @@ actor {
     let expiryTime = Time.now() + subscriptionDuration;
     subscriptions.add(user, expiryTime);
     #ok;
+  };
+
+  func getCurrentDate() : Text {
+    let now = Time.now();
+    let now_s = Int.abs(now / 1_000_000_000).toNat();
+
+    let daysSinceEpoch = now_s / 86_400;
+    let daysOf400YearCycles = daysSinceEpoch / 146_097;
+    let dayOf400YearCycle = daysSinceEpoch % 146_097;
+
+    let daysOf100YearCycle = dayOf400YearCycle / 36_524;
+    let dayOf100YearCycle = dayOf400YearCycle % 36_524;
+
+    let daysOf4YearCycle = dayOf100YearCycle / 1_461;
+    let dayOf4YearCycle = dayOf100YearCycle % 1_461;
+
+    let daysOf1YearCycle = dayOf4YearCycle / 365;
+    let dayOfYear = dayOf4YearCycle % 365;
+
+    var year = 1970 + daysOf400YearCycles * 400 + daysOf100YearCycle * 100 + daysOf4YearCycle * 4 + daysOf1YearCycle;
+    var dayOfYearVar = dayOfYear;
+
+    if (not (daysOf100YearCycle == 4 or daysOf1YearCycle == 4)) {
+      year += 1;
+    };
+
+    let months = [
+      31, // Jan
+      28, // Feb
+      31, // Mar
+      30, // Apr
+      31, // May
+      30, // Jun
+      31, // Jul
+      31, // Aug
+      30, // Sep
+      31, // Oct
+      30, // Nov
+      31,
+    ]; // Dec
+
+    var month = 0;
+    var day = 0;
+
+    var currentMonth = 0;
+    var currentMonthDays = 0;
+    var found = false;
+
+    for (days in months.values()) {
+      if (not found) {
+        var daysInMonth = days;
+        if (currentMonth == 1 and year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)) {
+          daysInMonth += 1;
+        };
+
+        if (dayOfYearVar < daysInMonth) {
+          month := currentMonth + 1;
+          day := dayOfYearVar + 1;
+          found := true;
+        } else {
+          currentMonth += 1;
+          currentMonthDays := days;
+          dayOfYearVar -= daysInMonth;
+        };
+      };
+    };
+
+    let yearText = year.toText();
+    let monthText = if (month < 10) { "0" # month.toText() } else {
+      month.toText();
+    };
+    let dayText = if (day < 10) { "0" # day.toText() } else { day.toText() };
+
+    yearText # "-" # monthText # "-" # dayText;
   };
 };

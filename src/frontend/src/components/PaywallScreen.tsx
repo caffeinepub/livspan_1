@@ -56,7 +56,7 @@ export default function PaywallScreen({
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img
-              src="/assets/generated/livspan-leaf-transparent.dim_120x120.png"
+              src="/assets/uploads/IMG_8398-1.png"
               alt="LivSpan"
               className="w-7 h-7 object-contain"
             />

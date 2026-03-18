@@ -43,13 +43,13 @@ export interface RoutineWithStatus {
   'description' : string,
 }
 export interface ScoreEntry { 'date' : string, 'score' : number }
-export interface SubscriptionStatus {
-  'expiryDate' : [] | [bigint],
+export interface SubscriptionEntry {
+  'expiryDate' : bigint,
+  'user' : Principal,
   'isActive' : boolean,
 }
-export interface SubscriptionEntry {
-  'user' : Principal,
-  'expiryDate' : bigint,
+export interface SubscriptionStatus {
+  'expiryDate' : [] | [bigint],
   'isActive' : boolean,
 }
 export interface UserProfile {

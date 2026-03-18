@@ -15,7 +15,7 @@ function AuthenticatedApp() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <img
-            src="/assets/generated/livspan-leaf-transparent.dim_120x120.png"
+            src="/assets/uploads/IMG_8398-1.png"
             alt="LivSpan"
             className="w-12 h-12 object-contain animate-pulse"
           />
@@ -47,7 +47,7 @@ export default function App() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <img
-            src="/assets/generated/livspan-leaf-transparent.dim_120x120.png"
+            src="/assets/uploads/IMG_8398-1.png"
             alt="LivSpan"
             className="w-12 h-12 object-contain animate-pulse"
           />

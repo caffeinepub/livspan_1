@@ -18,6 +18,11 @@ export const SubscriptionStatus = IDL.Record({
   'expiryDate' : IDL.Opt(IDL.Int),
   'isActive' : IDL.Bool,
 });
+export const SubscriptionEntry = IDL.Record({
+  'expiryDate' : IDL.Int,
+  'user' : IDL.Principal,
+  'isActive' : IDL.Bool,
+});
 export const DailyHealthData = IDL.Record({
   'sleepQuality' : IDL.Opt(IDL.Float64),
   'veggies' : IDL.Opt(IDL.Float64),
@@ -71,6 +76,11 @@ export const idlService = IDL.Service({
   'createRoutine' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Result], []),
   'deleteDiaryEntry' : IDL.Func([IDL.Nat], [Result], []),
   'deleteRoutine' : IDL.Func([IDL.Nat], [Result], []),
+  'getAdminSubscriptionList' : IDL.Func(
+      [],
+      [IDL.Vec(SubscriptionEntry)],
+      ['query'],
+    ),
   'getAllHealthData' : IDL.Func([], [IDL.Vec(DailyHealthData)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -144,6 +154,11 @@ export const idlFactory = ({ IDL }) => {
     'expiryDate' : IDL.Opt(IDL.Int),
     'isActive' : IDL.Bool,
   });
+  const SubscriptionEntry = IDL.Record({
+    'expiryDate' : IDL.Int,
+    'user' : IDL.Principal,
+    'isActive' : IDL.Bool,
+  });
   const DailyHealthData = IDL.Record({
     'sleepQuality' : IDL.Opt(IDL.Float64),
     'veggies' : IDL.Opt(IDL.Float64),
@@ -194,6 +209,11 @@ export const idlFactory = ({ IDL }) => {
     'createRoutine' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Result], []),
     'deleteDiaryEntry' : IDL.Func([IDL.Nat], [Result], []),
     'deleteRoutine' : IDL.Func([IDL.Nat], [Result], []),
+    'getAdminSubscriptionList' : IDL.Func(
+        [],
+        [IDL.Vec(SubscriptionEntry)],
+        ['query'],
+      ),
     'getAllHealthData' : IDL.Func([], [IDL.Vec(DailyHealthData)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),

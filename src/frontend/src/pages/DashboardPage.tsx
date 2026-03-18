@@ -21,7 +21,6 @@ import DiaryCard from "../components/DiaryCard";
 import FastingCard from "../components/FastingCard";
 import InsightsCard from "../components/InsightsCard";
 import LongevityScoreCard from "../components/LongevityScoreCard";
-import LongevityScoreHistoryCard from "../components/LongevityScoreHistoryCard";
 import MovementCard from "../components/MovementCard";
 import NutritionCard from "../components/NutritionCard";
 import PersonalDataCard from "../components/PersonalDataCard";
@@ -206,7 +205,7 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <img
-              src="/assets/generated/livspan-leaf-transparent.dim_120x120.png"
+              src="/assets/uploads/IMG_8398-1.png"
               alt="LivSpan leaf"
               className="w-7 h-7 object-contain"
             />
@@ -220,15 +219,6 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
               data-ocid="dashboard.tab"
             >
               {tr.nav_dashboard}
-            </span>
-            <span className="text-muted-foreground hover:text-foreground transition-colors cursor-default">
-              {tr.nav_journeys}
-            </span>
-            <span className="text-muted-foreground hover:text-foreground transition-colors cursor-default">
-              {tr.nav_library}
-            </span>
-            <span className="text-muted-foreground hover:text-foreground transition-colors cursor-default">
-              {tr.nav_community}
             </span>
           </nav>
           <div className="flex items-center gap-3">
@@ -462,7 +452,6 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
           >
             <PersonalDataCard />
             <LongevityScoreCard />
-            <LongevityScoreHistoryCard />
             <FastingCard />
             <NutritionCard />
             <MovementCard />
@@ -484,7 +473,7 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <img
-              src="/assets/generated/livspan-leaf-transparent.dim_120x120.png"
+              src="/assets/uploads/IMG_8398-1.png"
               alt="LivSpan"
               className="w-4 h-4 object-contain opacity-60"
             />
