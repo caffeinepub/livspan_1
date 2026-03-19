@@ -40,6 +40,7 @@ import PlaceholderCard from "../components/PlaceholderCard";
 import RoutineModal from "../components/RoutineModal";
 import SleepCard from "../components/SleepCard";
 import StressCard from "../components/StressCard";
+import WeeklyScoreCard from "../components/WeeklyScoreCard";
 import { type CardKey, useDailyCardChecks } from "../hooks/useDailyCardChecks";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useLanguage } from "../hooks/useLanguage";
@@ -1281,6 +1282,7 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
           >
             <PersonalDataCard />
             <LongevityScoreCard />
+            <WeeklyScoreCard />
             {/* Daily Routine Summary */}
             {(() => {
               const cardKeys: CardKey[] = [
