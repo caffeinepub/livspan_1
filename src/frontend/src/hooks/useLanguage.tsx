@@ -1,6 +1,6 @@
 import { type ReactNode, createContext, useContext, useState } from "react";
 
-type Lang = "en" | "de" | "ru";
+type Lang = "en" | "de" | "ru" | "zh";
 
 interface LangContextValue {
   lang: Lang;
@@ -15,7 +15,7 @@ const LangContext = createContext<LangContextValue>({
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
     const stored = localStorage.getItem("livspan_lang");
-    if (stored === "de" || stored === "ru") return stored;
+    if (stored === "de" || stored === "ru" || stored === "zh") return stored;
     return "en";
   });
 

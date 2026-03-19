@@ -14,6 +14,7 @@ import {
   History,
   Loader2,
   Lock,
+  Menu,
   Pencil,
   Plus,
   RefreshCw,
@@ -21,6 +22,7 @@ import {
   ShieldCheck,
   Trash2,
   Wallet,
+  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
@@ -692,7 +694,24 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
   const [showAdmin, setShowAdmin] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
   const [showRenewal, setShowRenewal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const walletPillRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(e.target as Node)
+      ) {
+        setMobileMenuOpen(false);
+      }
+    }
+    if (mobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [mobileMenuOpen]);
 
   const principal = identity?.getPrincipal().toString() ?? "";
   const todayStr = getTodayString();
@@ -825,8 +844,8 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
           </nav>
 
           <div className="flex items-center gap-3">
-            {/* Language toggle */}
-            <div className="flex items-center gap-1 bg-muted/40 rounded-full p-0.5 border border-border/30">
+            {/* Language toggle — desktop only */}
+            <div className="hidden sm:flex items-center gap-1 bg-muted/40 rounded-full p-0.5 border border-border/30">
               <button
                 type="button"
                 onClick={() => setLang("de")}
@@ -863,9 +882,21 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
               >
                 🇷🇺 RU
               </button>
+              <button
+                type="button"
+                onClick={() => setLang("zh")}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  lang === "zh"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-ocid="dashboard.toggle"
+              >
+                🇨🇳 ZH
+              </button>
             </div>
 
-            {/* Subscription expiry badge */}
+            {/* Subscription expiry badge — desktop only */}
             {expiryDate !== undefined && (
               <button
                 type="button"
@@ -881,7 +912,7 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
               </button>
             )}
 
-            {/* Wallet pill — clickable to open dropdown */}
+            {/* Wallet pill — desktop only */}
             <div className="relative hidden sm:block" ref={walletPillRef}>
               <button
                 type="button"
@@ -911,30 +942,190 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
               </AnimatePresence>
             </div>
 
+            {/* Admin button — desktop only */}
             {isAdmin && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowAdmin(true)}
-                className="rounded-full border-gold/50 text-gold hover:bg-gold/10 text-xs gap-1.5"
+                className="hidden sm:flex rounded-full border-gold/50 text-gold hover:bg-gold/10 text-xs gap-1.5"
                 data-ocid="admin.open_modal_button"
               >
                 <Shield className="w-3.5 h-3.5" />
                 Admin
               </Button>
             )}
+
+            {/* Logout button — desktop only */}
             <Button
               variant="outline"
               size="sm"
               onClick={handleLogout}
-              className="rounded-full border-border/50 text-muted-foreground hover:text-foreground text-xs"
+              className="hidden sm:flex rounded-full border-border/50 text-muted-foreground hover:text-foreground text-xs"
               data-ocid="dashboard.secondary_button"
             >
               {tr.disconnect}
             </Button>
+
+            {/* Mobile hamburger menu */}
+            <div className="relative sm:hidden" ref={mobileMenuRef}>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((v) => !v)}
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-muted/50 border border-border/40 hover:bg-muted/70 transition-colors"
+                aria-label="Open menu"
+                data-ocid="dashboard.toggle"
+              >
+                {mobileMenuOpen ? (
+                  <X className="w-4 h-4 text-foreground" />
+                ) : (
+                  <Menu className="w-4 h-4 text-foreground" />
+                )}
+              </button>
+
+              <AnimatePresence>
+                {mobileMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-12 w-64 bg-background/95 border border-border/40 rounded-2xl shadow-xl backdrop-blur z-50 p-3 flex flex-col gap-2"
+                  >
+                    {/* Language selector */}
+                    <div className="px-2 py-1">
+                      <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">
+                        Language
+                      </p>
+                      <div className="grid grid-cols-4 gap-1">
+                        {(["de", "en", "ru", "zh"] as const).map((l) => (
+                          <button
+                            key={l}
+                            type="button"
+                            onClick={() => {
+                              setLang(l);
+                              setMobileMenuOpen(false);
+                            }}
+                            className={`py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                              lang === l
+                                ? "bg-green-accent/20 text-green-accent border border-green-accent/30"
+                                : "bg-muted/50 text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {l === "de"
+                              ? "🇩🇪"
+                              : l === "en"
+                                ? "🇬🇧"
+                                : l === "ru"
+                                  ? "🇷🇺"
+                                  : "🇨🇳"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="h-px bg-border/30 mx-2" />
+
+                    {/* Wallet */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWalletOpen((v) => !v);
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-colors text-left"
+                      data-ocid="wallet.open_modal_button"
+                    >
+                      <Wallet className="w-4 h-4 text-green-accent shrink-0" />
+                      <span className="text-sm text-foreground font-mono truncate">
+                        {shortenPrincipal(principal)}
+                      </span>
+                    </button>
+
+                    {/* Access until */}
+                    {expiryDate !== undefined && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowRenewal(true);
+                          setMobileMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-gold/10 transition-colors text-left"
+                        data-ocid="dashboard.panel"
+                      >
+                        <CalendarCheck className="w-4 h-4 text-gold shrink-0" />
+                        <span className="text-sm text-gold">
+                          Access until: {formatExpiryDate(expiryDate, locale)}
+                        </span>
+                      </button>
+                    )}
+
+                    {/* Admin */}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAdmin(true);
+                          setMobileMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-gold/10 transition-colors text-left"
+                        data-ocid="admin.open_modal_button"
+                      >
+                        <Shield className="w-4 h-4 text-gold shrink-0" />
+                        <span className="text-sm text-gold font-medium">
+                          Admin
+                        </span>
+                      </button>
+                    )}
+
+                    <div className="h-px bg-border/30 mx-2" />
+
+                    {/* Logout */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleLogout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-muted/50 transition-colors text-left"
+                      data-ocid="dashboard.secondary_button"
+                    >
+                      <span className="text-sm text-muted-foreground">
+                        {tr.disconnect}
+                      </span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Mobile wallet dropdown (rendered outside header to avoid overflow clip) */}
+      <AnimatePresence>
+        {walletOpen && (
+          <div
+            className="sm:hidden fixed inset-0 z-40"
+            onClick={() => setWalletOpen(false)}
+            onKeyDown={(e) => e.key === "Escape" && setWalletOpen(false)}
+            role="presentation"
+          >
+            <div
+              className="absolute top-16 right-4 w-80"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              role="presentation"
+            >
+              <WalletDropdown
+                principal={principal}
+                isAdmin={isAdmin}
+                onClose={() => setWalletOpen(false)}
+              />
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Hero greeting */}
       <section className="max-w-6xl mx-auto w-full px-6 pt-10 pb-6">

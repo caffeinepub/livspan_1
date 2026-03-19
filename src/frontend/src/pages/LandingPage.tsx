@@ -102,6 +102,18 @@ export default function LandingPage() {
               >
                 🇷🇺 RU
               </button>
+              <button
+                type="button"
+                onClick={() => setLang("zh")}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  lang === "zh"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                data-ocid="landing.toggle"
+              >
+                🇨🇳 ZH
+              </button>
             </div>
             <Button
               data-ocid="landing.primary_button"

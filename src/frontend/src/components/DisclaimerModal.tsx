@@ -41,6 +41,17 @@ const texts: Record<string, { title: string; body: string[]; button: string }> =
       ],
       button: "Ich verstehe und stimme zu",
     },
+    zh: {
+      title: "重要免责声明",
+      body: [
+        "LivSpan是一款个人健康追踪工具，仅用于信息和激励目的。",
+        "它不是医疗设备，不提供医疗建议、诊断或治疗。在改变健康、饮食或健身计划之前，请务必咨询合格的医疗专业人员。",
+        "LivSpan对基于本应用显示的数据或建议所做的任何决定不承担责任。",
+        "你的健康数据以去中心化和匿名方式存储在互联网计算机区块链（ICP）上。",
+        "LIV代币没有有保障的货币价值，不是金融工具。",
+      ],
+      button: "我理解并同意",
+    },
   };
 
 const fallback = texts.en;
