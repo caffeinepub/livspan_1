@@ -64,7 +64,10 @@ export default function NutritionCard() {
   const calorieGoal = tdee ?? 2000;
   const calorieMax = tdee ? Math.round(tdee * 1.5) : 4000;
 
-  const proteinTarget = Math.round(weightKg * 1.8);
+  // Age-adapted protein multiplier
+  const proteinMultiplier =
+    age !== null && age >= 70 ? 2.2 : age !== null && age >= 60 ? 2.0 : 1.8;
+  const proteinTarget = Math.round(weightKg * proteinMultiplier);
 
   const { protein, veggies, water, calories } = health;
 
@@ -81,8 +84,20 @@ export default function NutritionCard() {
 
   // Build AI tips
   const aiTips: string[] = [];
-  if (protein > 0 && proteinPct < 80)
+  if (protein > 0 && proteinPct < 80) {
+    if (age !== null && age >= 60) {
+      const ageTip =
+        lang === "de"
+          ? `Ab ${age >= 70 ? "70" : "60"} Jahren braucht dein Körper mehr Protein (${age >= 70 ? "≥2,2" : "≥2,0"}g/kg) um Muskelabbau (Sarkopenie) aktiv zu bekämpfen.`
+          : lang === "ru"
+            ? `После ${age >= 70 ? "70" : "60"} лет организму требуется больше белка (${age >= 70 ? "≥2,2" : "≥2,0"} г/кг) для борьбы с саркопенией.`
+            : lang === "zh"
+              ? `${age >= 70 ? "70" : "60"}岁以上需要更多蛋白质（${age >= 70 ? "≥2.2" : "≥2.0"}g/kg）以积极对抗肌肉流失（肌少症）。`
+              : `After age ${age >= 70 ? "70" : "60"}, your body needs more protein (${age >= 70 ? "≥2.2" : "≥2.0"}g/kg) to actively combat muscle loss (sarcopenia).`;
+      aiTips.push(ageTip);
+    }
     aiTips.push(...(tr.ai_tip_protein as unknown as string[]));
+  }
   if (veggies > 0 && veggiesPct < 80)
     aiTips.push(...(tr.ai_tip_veggies as unknown as string[]));
   if (water > 0 && waterPct < 80)
@@ -247,6 +262,7 @@ export default function NutritionCard() {
             <span>0g</span>
             <span className="text-green-accent/70">
               {tr.nutrition_goal}: {proteinTarget}g
+              {age !== null && age >= 60 ? ` (${proteinMultiplier}g/kg)` : ""}
             </span>
           </div>
         </div>

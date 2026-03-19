@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Lightbulb, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import type { DailyHealthData, ScoreEntry } from "../backend.d";
 import { useActor } from "../hooks/useActor";
+import { useGetCallerProfile } from "../hooks/useQueries";
 
 type Status = "good" | "warning" | "bad";
 
@@ -25,9 +26,22 @@ function getLast7Days(): string[] {
   return days;
 }
 
+// Age-adapted BP thresholds – same logic as StressCard
+function bpGreenThreshold(age: number | null): {
+  sysGreen: number;
+  sysWarning: number;
+} {
+  if (age !== null && age >= 80) return { sysGreen: 145, sysWarning: 160 };
+  if (age !== null && age >= 60) return { sysGreen: 139, sysWarning: 150 };
+  if (age !== null && age >= 45) return { sysGreen: 130, sysWarning: 140 };
+  if (age !== null && age >= 30) return { sysGreen: 125, sysWarning: 135 };
+  return { sysGreen: 120, sysWarning: 130 };
+}
+
 function buildInsights(
   healthData: DailyHealthData[],
   scoreHistory: ScoreEntry[],
+  age: number | null,
 ): Insight[] {
   const last7 = getLast7Days();
   const relevant = healthData.filter((d) => last7.includes(d.date));
@@ -150,7 +164,7 @@ function buildInsights(
     });
   }
 
-  // Stress / BP
+  // Stress / BP — age-adapted thresholds
   const bpDays = relevant.filter(
     (d) => d.systolic !== undefined && d.systolic > 0,
   );
@@ -158,8 +172,9 @@ function buildInsights(
     const avgSys =
       bpDays.reduce((s, d) => s + (d.systolic ?? 0), 0) / bpDays.length;
     const rounded = Math.round(avgSys);
+    const { sysGreen, sysWarning } = bpGreenThreshold(age);
     const status: Status =
-      avgSys < 120 ? "good" : avgSys < 130 ? "warning" : "bad";
+      avgSys <= sysGreen ? "good" : avgSys <= sysWarning ? "warning" : "bad";
     insights.push({
       icon: "❤️",
       label: { de: "Blutdruck", en: "Blood Pressure" },
@@ -194,6 +209,12 @@ function StatusIcon({ status }: { status: Status }) {
 
 export default function InsightsCard() {
   const { actor, isFetching: actorFetching } = useActor();
+  const { data: profile } = useGetCallerProfile();
+
+  const birthYear = (profile as any)?.birthYear
+    ? Number((profile as any).birthYear)
+    : null;
+  const age = birthYear ? new Date().getFullYear() - birthYear : null;
 
   const { data: healthData = [], isLoading: healthLoading } = useQuery<
     DailyHealthData[]
@@ -223,7 +244,9 @@ export default function InsightsCard() {
   const daysWithData = healthData.filter((d) => last7.includes(d.date)).length;
   const hasEnoughData = daysWithData >= 2;
 
-  const insights = hasEnoughData ? buildInsights(healthData, scoreHistory) : [];
+  const insights = hasEnoughData
+    ? buildInsights(healthData, scoreHistory, age)
+    : [];
 
   return (
     <div className="glass-card rounded-2xl p-5">

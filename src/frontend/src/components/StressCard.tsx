@@ -2,20 +2,38 @@ import { Slider } from "@/components/ui/slider";
 import { HeartPulse } from "lucide-react";
 import { useDailyHealth } from "../hooks/useDailyHealth";
 import { useLanguage } from "../hooks/useLanguage";
+import { useGetCallerProfile } from "../hooks/useQueries";
 import { t } from "../i18n";
 import AiTip from "./AiTip";
 
-function bpCategory(systolic: number, diastolic: number) {
-  if (systolic < 120 && diastolic < 80) return "Optimal";
-  if (systolic < 130 && diastolic < 80) return "Normal";
-  if (systolic < 140 || diastolic < 90) return "Elevated";
+// Age-adapted BP thresholds (ESC/Hochdruckliga + Longevity perspective)
+function bpThresholds(age: number | null) {
+  if (age !== null && age >= 80)
+    return { sysGreen: 145, sysYellow: 160, diaGreen: 90, diaYellow: 100 };
+  if (age !== null && age >= 60)
+    return { sysGreen: 139, sysYellow: 150, diaGreen: 85, diaYellow: 95 };
+  if (age !== null && age >= 45)
+    return { sysGreen: 130, sysYellow: 140, diaGreen: 85, diaYellow: 90 };
+  if (age !== null && age >= 30)
+    return { sysGreen: 125, sysYellow: 135, diaGreen: 80, diaYellow: 90 };
+  return { sysGreen: 120, sysYellow: 130, diaGreen: 80, diaYellow: 90 };
+}
+
+function bpCategory(systolic: number, diastolic: number, age: number | null) {
+  const { sysGreen, sysYellow, diaGreen, diaYellow } = bpThresholds(age);
+  if (systolic <= sysGreen && diastolic <= diaGreen) return "Optimal";
+  if (systolic <= sysYellow && diastolic <= diaYellow) return "Normal";
+  if (systolic < sysYellow + 10 || diastolic < diaYellow + 5) return "Elevated";
   return "High";
 }
 
-function bpColor(systolic: number, diastolic: number) {
-  if (systolic < 120 && diastolic < 80) return "text-green-accent";
-  if (systolic < 130 && diastolic < 80) return "text-green-accent";
-  if (systolic < 140 || diastolic < 90) return "text-yellow-400";
+function bpColor(systolic: number, diastolic: number, age: number | null) {
+  const { sysGreen, sysYellow, diaGreen, diaYellow } = bpThresholds(age);
+  if (systolic <= sysGreen && diastolic <= diaGreen) return "text-green-accent";
+  if (systolic <= sysYellow && diastolic <= diaYellow)
+    return "text-green-accent";
+  if (systolic < sysYellow + 10 || diastolic < diaYellow + 5)
+    return "text-yellow-400";
   return "text-red-400";
 }
 
@@ -33,25 +51,57 @@ function hrColor(hr: number) {
   return "text-red-400";
 }
 
+// Returns a localized string describing the age-specific BP target
+function ageTargetTip(
+  lang: string,
+  age: number | null,
+  sysTarget: number,
+  diaTarget: number,
+): string {
+  const ageLabel = age !== null ? age : "?";
+  switch (lang) {
+    case "de":
+      return `Dein altersgerechter Blutdruckzielwert (${ageLabel} Jahre) liegt bei <${sysTarget}/<${diaTarget} mmHg – basierend auf aktuellen ESC-Leitlinien.`;
+    case "ru":
+      return `Ваш целевой показатель артериального давления с учётом возраста (${ageLabel} лет) составляет <${sysTarget}/<${diaTarget} мм рт. ст. — согласно современным рекомендациям ЕОК.`;
+    case "zh":
+      return `根据您的年龄（${ageLabel}岁）及ESC指南，您的目标血压为 <${sysTarget}/<${diaTarget} mmHg。`;
+    default:
+      return `Your age-adapted BP target (age ${ageLabel}) is <${sysTarget}/<${diaTarget} mmHg — based on current ESC guidelines.`;
+  }
+}
+
 export default function StressCard() {
   const { lang } = useLanguage();
   const tr = t[lang];
   const { health, setHealth } = useDailyHealth();
+  const { data: profile } = useGetCallerProfile();
+
+  const currentYear = new Date().getFullYear();
+  const birthYear = (profile as any)?.birthYear
+    ? Number((profile as any).birthYear)
+    : null;
+  const age = birthYear ? currentYear - birthYear : null;
 
   const { systolic, diastolic, restingHr } = health;
 
   const set = (key: "systolic" | "diastolic" | "restingHr", v: number) =>
     setHealth({ [key]: v });
 
-  const bpColorClass = bpColor(systolic, diastolic);
+  const bpColorClass = bpColor(systolic, diastolic, age);
   const hrColorClass = hrColor(restingHr);
 
-  // Build AI tips
-  const aiTips: string[] = [];
-  const bpElevated = systolic >= 130 || diastolic >= 80;
+  // Fully age-adapted trigger for AI tips
+  const { sysGreen: sysTarget, diaGreen: diaTarget } = bpThresholds(age);
+  const bpElevated = systolic > sysTarget || diastolic > diaTarget;
   const hrHigh = restingHr > 70;
-  if (systolic > 0 && bpElevated)
+
+  const aiTips: string[] = [];
+  if (systolic > 0 && bpElevated) {
+    // First tip is personalized with the user's age-specific target
+    aiTips.push(ageTargetTip(lang, age, sysTarget, diaTarget));
     aiTips.push(...(tr.ai_tip_bp_elevated as unknown as string[]));
+  }
   if (restingHr > 0 && hrHigh)
     aiTips.push(...(tr.ai_tip_hr_high as unknown as string[]));
 
@@ -95,7 +145,7 @@ export default function StressCard() {
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
             <span>0</span>
             <span className="text-rose-400/70">
-              {tr.stress_bp_target}: &lt;120
+              {tr.stress_bp_target}: &lt;{sysTarget}
             </span>
             <span>200</span>
           </div>
@@ -113,7 +163,7 @@ export default function StressCard() {
               </span>
               {" – "}
               <span className={bpColorClass}>
-                {bpCategory(systolic, diastolic)}
+                {bpCategory(systolic, diastolic, age)}
               </span>
             </span>
           </div>
@@ -128,7 +178,7 @@ export default function StressCard() {
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
             <span>0</span>
             <span className="text-rose-400/70">
-              {tr.stress_bp_target}: &lt;80
+              {tr.stress_bp_target}: &lt;{diaTarget}
             </span>
             <span>130</span>
           </div>
@@ -187,7 +237,7 @@ export default function StressCard() {
           <div className="w-px h-8 bg-border/30" />
           <div className="text-center">
             <p className={`text-xs font-semibold ${bpColorClass}`}>
-              {bpCategory(systolic, diastolic)}
+              {bpCategory(systolic, diastolic, age)}
             </p>
             <p className="text-[10px] text-muted-foreground">
               {tr.stress_status}

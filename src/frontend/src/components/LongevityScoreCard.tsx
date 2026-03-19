@@ -53,7 +53,6 @@ function calcNutritionScore(
   const waterScore = Math.min(100, (water / 2) * 100);
 
   if (calories > 0 && tdee !== null && tdee > 0) {
-    // Score 100 at TDEE, decreasing for over/under (penalises 50% deviation fully)
     const calorieRatio = calories / tdee;
     const calorieScore = Math.max(0, 100 - Math.abs(calorieRatio - 1) * 200);
     return (proteinScore + veggiesScore + waterScore + calorieScore) / 4;
@@ -76,14 +75,32 @@ function calcMovementScore(duration: number, intensity: number) {
   return durationScore * 0.6 + intensityScore * 0.4;
 }
 
+// Age-adapted BP thresholds – mirrors StressCard logic
+function bpThresholds(age: number | null) {
+  if (age !== null && age >= 80) return { sysOptimal: 142, diaOptimal: 87 };
+  if (age !== null && age >= 60) return { sysOptimal: 134, diaOptimal: 82 };
+  if (age !== null && age >= 45) return { sysOptimal: 125, diaOptimal: 82 };
+  if (age !== null && age >= 30) return { sysOptimal: 122, diaOptimal: 80 };
+  // 18-29 or unknown
+  return { sysOptimal: 115, diaOptimal: 75 };
+}
+
 function calcStressScore(
   systolic: number,
   diastolic: number,
   restingHr: number,
+  age: number | null,
 ) {
   if (systolic === 0 && diastolic === 0 && restingHr === 0) return 0;
-  const systolicScore = Math.max(0, 100 - Math.abs(systolic - 115) * 1.5);
-  const diastolicScore = Math.max(0, 100 - Math.abs(diastolic - 75) * 2);
+  const { sysOptimal, diaOptimal } = bpThresholds(age);
+  const systolicScore = Math.max(
+    0,
+    100 - Math.abs(systolic - sysOptimal) * 1.5,
+  );
+  const diastolicScore = Math.max(
+    0,
+    100 - Math.abs(diastolic - diaOptimal) * 2,
+  );
   const hrScore = Math.max(0, 100 - Math.abs(restingHr - 55) * 1.5);
   return (systolicScore + diastolicScore + hrScore) / 3;
 }
@@ -98,6 +115,68 @@ function calcFastingScore(startTime: string, endTime: string) {
       ? (endMin - startMin) / 60
       : (1440 - startMin + endMin) / 60;
   return Math.min(100, (fastingWindowHours / 16) * 100);
+}
+
+function getAgeScoreInsight(age: number, lang: string): string {
+  if (age >= 80) {
+    switch (lang) {
+      case "de":
+        return "Ab 80: Gentle Bewegung, Proteinzufuhr (≥2,2g/kg) und BP-Kontrolle sind jetzt deine wichtigsten Longevity-Hebel.";
+      case "ru":
+        return "После 80 лет: мягкие нагрузки, достаточный белок (≥2,2 г/кг) и контроль давления — ключевые факторы долголетия.";
+      case "zh":
+        return "80岁以上：温和运动、充足蛋白质（≥2.2g/kg）和血压控制是您最重要的长寿因素。";
+      default:
+        return "Age 80+: Gentle movement, protein intake (≥2.2g/kg), and BP control are your key longevity levers.";
+    }
+  }
+  if (age >= 60) {
+    switch (lang) {
+      case "de":
+        return "Ab 60: Priorisiere Muskelerhalt (Protein ≥2,0g/kg), BP-Kontrolle (<139/<85) und regelmäßige Bewegung.";
+      case "ru":
+        return "После 60 лет: приоритет — сохранение мышц (белок ≥2,0 г/кг), контроль давления (<139/<85) и регулярные нагрузки.";
+      case "zh":
+        return "60岁以上：优先保持肌肉量（蛋白质≥2.0g/kg）、控制血压（<139/<85）和规律运动。";
+      default:
+        return "Age 60+: Prioritise muscle preservation (protein ≥2.0g/kg), BP control (<139/<85), and regular movement.";
+    }
+  }
+  if (age >= 45) {
+    switch (lang) {
+      case "de":
+        return "Ab 45: Achte auf Hormonbalance, BP (<130/<85) und ausreichend Protein (1,8g/kg) für optimale Longevity.";
+      case "ru":
+        return "После 45 лет: следите за гормональным балансом, давлением (<130/<85) и достаточным белком (1,8 г/кг).";
+      case "zh":
+        return "45岁以上：关注激素平衡、血压（<130/<85）和充足蛋白质（1.8g/kg）。";
+      default:
+        return "Age 45+: Focus on hormonal balance, BP (<130/<85), and adequate protein (1.8g/kg) for optimal longevity.";
+    }
+  }
+  if (age >= 30) {
+    switch (lang) {
+      case "de":
+        return "Ab 30: Stressmanagement und konsequente Routinen jetzt legen den Grundstein für deine Langlebigkeit.";
+      case "ru":
+        return "После 30 лет: управление стрессом и последовательные привычки сейчас закладывают основу долголетия.";
+      case "zh":
+        return "30岁以上：现在管理压力、建立规律习惯，为您的长寿奠定基础。";
+      default:
+        return "Age 30+: Stress management and consistent routines now lay the foundation for your longevity.";
+    }
+  }
+  // 18-29
+  switch (lang) {
+    case "de":
+      return "Deine Gewohnheiten jetzt bestimmen deine Gesundheit in 30 Jahren — früh starten macht den größten Unterschied.";
+    case "ru":
+      return "Ваши привычки сейчас определят здоровье через 30 лет — начало в молодом возрасте имеет наибольшее значение.";
+    case "zh":
+      return "您现在的习惯决定30年后的健康——越早开始，影响越大。";
+    default:
+      return "Your habits now shape your health in 30 years — starting early makes the biggest difference.";
+  }
 }
 
 interface SubScoreRowProps {
@@ -241,7 +320,7 @@ export default function LongevityScoreCard() {
     ? calcMovementScore(movementDuration, intensity)
     : 0;
   const stressScore = hasStress
-    ? calcStressScore(systolic, diastolic, restingHr)
+    ? calcStressScore(systolic, diastolic, restingHr, age)
     : 0;
   const fastingScore = hasFasting
     ? calcFastingScore(fastingStart!, fastingEnd!)
@@ -314,6 +393,13 @@ export default function LongevityScoreCard() {
       <div className="flex justify-center mb-5">
         <ScoreRing score={totalScore} category={tr[categoryKey]} />
       </div>
+
+      {/* Age insight */}
+      {age !== null && (
+        <div className="mx-1 mb-4 px-3 py-2 rounded-xl bg-white/4 border border-border/30 text-xs text-muted-foreground leading-snug text-center">
+          {getAgeScoreInsight(age, lang)}
+        </div>
+      )}
 
       {/* Sub-scores */}
       <div className="space-y-2.5">
