@@ -31,6 +31,37 @@ function calcBMR(
   return Math.round((male + female) / 2);
 }
 
+/** Age-adapted water target in litres */
+function waterTarget(age: number | null): number {
+  if (age === null) return 2.0;
+  if (age >= 65) return 2.5; // reduced thirst sensation at higher age
+  return 2.0;
+}
+
+/** Age-adapted calorie safety note */
+function ageCalorieNote(age: number | null, lang: string): string | null {
+  if (age === null) return null;
+  if (age >= 65) {
+    if (lang === "de")
+      return "Ab 65: Kalorienqualität über Kalorienmenge. Genug Protein schützt vor Muskelschwund.";
+    if (lang === "ru")
+      return "65+: качество калорий важнее количества. Достаточно белка для защиты мышц.";
+    if (lang === "zh")
+      return "65岁以上：卡路里质量比数量更重要，足够的蛋白质可防止肌肉流失。";
+    return "Age 65+: Calorie quality matters more than restriction. Adequate protein protects muscle mass.";
+  }
+  if (age >= 50) {
+    if (lang === "de")
+      return "Ab 50: Stoffwechsel verlangsamt sich. Proteinreiche Mahlzeiten helfen, Muskeln zu erhalten.";
+    if (lang === "ru")
+      return "50+: метаболизм замедляется. Белковые блюда помогают сохранить мышцы.";
+    if (lang === "zh")
+      return "50岁以上：新陈代谢放缓。富含蛋白质的饮食有助于维持肌肉。";
+    return "Age 50+: Metabolism slows. Protein-rich meals help maintain muscle mass.";
+  }
+  return null;
+}
+
 export default function NutritionCard() {
   const { lang } = useLanguage();
   const tr = t[lang];
@@ -59,7 +90,14 @@ export default function NutritionCard() {
     health.movementDuration ?? 0,
   );
 
-  const tdee = bmr !== null ? Math.round(bmr * activityInfo.factor) : null;
+  // Apply age-based metabolic correction: after 60 reduce TDEE by ~5% per decade
+  const ageMetabolicFactor =
+    age !== null && age >= 70 ? 0.9 : age !== null && age >= 60 ? 0.95 : 1.0;
+
+  const tdee =
+    bmr !== null
+      ? Math.round(bmr * activityInfo.factor * ageMetabolicFactor)
+      : null;
 
   const calorieGoal = tdee ?? 2000;
   const calorieMax = tdee ? Math.round(tdee * 1.5) : 4000;
@@ -69,6 +107,9 @@ export default function NutritionCard() {
     age !== null && age >= 70 ? 2.2 : age !== null && age >= 60 ? 2.0 : 1.8;
   const proteinTarget = Math.round(weightKg * proteinMultiplier);
 
+  // Age-adapted water target
+  const waterGoal = waterTarget(age);
+
   const { protein, veggies, water, calories } = health;
 
   const set = (key: "protein" | "veggies" | "water", v: number) =>
@@ -76,11 +117,13 @@ export default function NutritionCard() {
 
   const proteinPct = Math.min(100, Math.round((protein / proteinTarget) * 100));
   const veggiesPct = Math.min(100, Math.round((veggies / 400) * 100));
-  const waterPct = Math.min(100, Math.round((water / 2) * 100));
+  const waterPct = Math.min(100, Math.round((water / waterGoal) * 100));
   const caloriesPct = Math.min(100, Math.round((calories / calorieGoal) * 100));
 
   const activityLabelKey =
     `nutrition_activity_${activityInfo.key}` as keyof typeof tr;
+
+  const calorieNote = ageCalorieNote(age, lang);
 
   // Build AI tips
   const aiTips: string[] = [];
@@ -100,11 +143,34 @@ export default function NutritionCard() {
   }
   if (veggies > 0 && veggiesPct < 80)
     aiTips.push(...(tr.ai_tip_veggies as unknown as string[]));
-  if (water > 0 && waterPct < 80)
+  if (water > 0 && waterPct < 80) {
+    if (age !== null && age >= 65) {
+      const waterAgeTip =
+        lang === "de"
+          ? "Ab 65 Jahren lässt das Durstgefühl nach. Trinke regelmäßig -- auch ohne Durst -- mindestens 2,5 L täglich."
+          : lang === "ru"
+            ? "После 65 лет чувство жажды снижается. Пейте регулярно, не дожидаясь жажды -- минимум 2,5 л в день."
+            : lang === "zh"
+              ? "65岁以上口渴感减弱。即使不渴也要定期喝水，每天至少2.5升。"
+              : "After 65 your thirst sensation diminishes. Drink regularly even without thirst -- at least 2.5 L per day.";
+      aiTips.push(waterAgeTip);
+    }
     aiTips.push(...(tr.ai_tip_water as unknown as string[]));
-  if (calories > 0 && caloriesPct < 60)
+  }
+  if (calories > 0 && caloriesPct < 60) {
+    if (age !== null && age >= 65) {
+      const lowCalAgeTip =
+        lang === "de"
+          ? "Zu wenig Kalorien ab 65 Jahren beschleunigt den Muskelschwund. Stelle sicher, dass du genug isst -- besonders protein- und nährstoffreiche Mahlzeiten."
+          : lang === "ru"
+            ? "Слишком мало калорий после 65 лет ускоряет потерю мышечной массы. Убедитесь, что едите достаточно -- особенно богатые белком блюда."
+            : lang === "zh"
+              ? "65岁以上热量摄入不足会加速肌肉流失。确保摄入足够热量，尤其是富含蛋白质的食物。"
+              : "Too few calories after age 65 accelerates muscle loss. Make sure you eat enough -- especially protein-rich, nutrient-dense meals.";
+      aiTips.push(lowCalAgeTip);
+    }
     aiTips.push(...(tr.ai_tip_calories_low as unknown as string[]));
-  else if (calories > 0 && caloriesPct > 130)
+  } else if (calories > 0 && caloriesPct > 130)
     aiTips.push(...(tr.ai_tip_calories_high as unknown as string[]));
 
   return (
@@ -189,6 +255,22 @@ export default function NutritionCard() {
                   {tr.nutrition_tdee_unit}
                 </span>
               </div>
+              {ageMetabolicFactor < 1 && (
+                <span className="text-[10px] text-gold/80 block mt-0.5">
+                  {lang === "de"
+                    ? `Alterskorrektur ${age! >= 70 ? "−10%" : "−5%"} angewandt`
+                    : lang === "ru"
+                      ? `Возрастная коррекция ${age! >= 70 ? "−10%" : "−5%"} применена`
+                      : lang === "zh"
+                        ? `已应用年龄修正系数 ${age! >= 70 ? "−10%" : "−5%"}`
+                        : `Age correction ${age! >= 70 ? "−10%" : "−5%"} applied`}
+                </span>
+              )}
+              {calorieNote && (
+                <span className="text-[10px] text-muted-foreground/70 block mt-0.5">
+                  {calorieNote}
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -309,12 +391,12 @@ export default function NutritionCard() {
             <span className="text-xs text-muted-foreground">
               <span
                 className={`font-semibold ${
-                  water >= 2 ? "text-green-accent" : "text-foreground"
+                  water >= waterGoal ? "text-green-accent" : "text-foreground"
                 }`}
               >
                 {water.toFixed(1)}L
               </span>
-              {" / min. 2L"}
+              {` / min. ${waterGoal.toFixed(1)}L`}
             </span>
           </div>
           <Slider
@@ -330,7 +412,8 @@ export default function NutritionCard() {
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
             <span>0L</span>
             <span className="text-green-accent/70">
-              {tr.nutrition_goal}: 2L
+              {tr.nutrition_goal}: {waterGoal.toFixed(1)}L
+              {age !== null && age >= 65 ? " (65+)" : ""}
             </span>
           </div>
         </div>
