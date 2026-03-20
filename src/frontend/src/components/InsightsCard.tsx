@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { Lightbulb, Minus, TrendingDown, TrendingUp } from "lucide-react";
-import type { DailyHealthData, ScoreEntry } from "../backend.d";
+import type { DailyHealthData } from "../backend.d";
 import { useActor } from "../hooks/useActor";
 import { useGetCallerProfile } from "../hooks/useQueries";
 
@@ -26,7 +26,7 @@ function getLast7Days(): string[] {
   return days;
 }
 
-// Age-adapted BP thresholds – same logic as StressCard
+// Age-adapted BP upper thresholds – same logic as StressCard
 function bpGreenThreshold(age: number | null): {
   sysGreen: number;
   sysWarning: number;
@@ -38,9 +38,16 @@ function bpGreenThreshold(age: number | null): {
   return { sysGreen: 120, sysWarning: 130 };
 }
 
+// Age-adapted BP lower threshold for systolic
+function bpLowerThreshold(age: number | null): number {
+  if (age !== null && age >= 80) return 105;
+  if (age !== null && age >= 60) return 100;
+  if (age !== null && age >= 45) return 95;
+  return 90; // 18–44
+}
+
 function buildInsights(
   healthData: DailyHealthData[],
-  scoreHistory: ScoreEntry[],
   age: number | null,
 ): Insight[] {
   const last7 = getLast7Days();
@@ -65,29 +72,6 @@ function buildInsights(
       detail: {
         de: `Ø ${rounded}h / Tag (${sleepDays.length} Tage)`,
         en: `Avg ${rounded}h / day (${sleepDays.length} days)`,
-      },
-    });
-  }
-
-  // Score trend
-  const last7Scores = scoreHistory
-    .filter((s) => last7.includes(s.date))
-    .sort((a, b) => a.date.localeCompare(b.date));
-  if (last7Scores.length >= 4) {
-    const recent = last7Scores.slice(-3);
-    const older = last7Scores.slice(0, last7Scores.length - 3);
-    const avgRecent = recent.reduce((s, e) => s + e.score, 0) / recent.length;
-    const avgOlder = older.reduce((s, e) => s + e.score, 0) / older.length;
-    const diff = avgRecent - avgOlder;
-    const status: Status = diff >= 3 ? "good" : diff <= -3 ? "bad" : "warning";
-    const sign = diff > 0 ? "+" : "";
-    insights.push({
-      icon: diff >= 3 ? "📈" : diff <= -3 ? "📉" : "📊",
-      label: { de: "Score-Trend", en: "Score Trend" },
-      status,
-      detail: {
-        de: `${diff >= 3 ? "Steigend" : diff <= -3 ? "Fallend" : "Stabil"} (${sign}${Math.round(diff)} Pkt)`,
-        en: `${diff >= 3 ? "Improving" : diff <= -3 ? "Declining" : "Stable"} (${sign}${Math.round(diff)} pts)`,
       },
     });
   }
@@ -164,7 +148,7 @@ function buildInsights(
     });
   }
 
-  // Stress / BP — age-adapted thresholds
+  // Stress / BP — age-adapted thresholds (upper and lower bounds)
   const bpDays = relevant.filter(
     (d) => d.systolic !== undefined && d.systolic > 0,
   );
@@ -173,15 +157,28 @@ function buildInsights(
       bpDays.reduce((s, d) => s + (d.systolic ?? 0), 0) / bpDays.length;
     const rounded = Math.round(avgSys);
     const { sysGreen, sysWarning } = bpGreenThreshold(age);
+    const sysLow = bpLowerThreshold(age);
     const status: Status =
-      avgSys <= sysGreen ? "good" : avgSys <= sysWarning ? "warning" : "bad";
+      avgSys < sysLow
+        ? "warning" // Too low
+        : avgSys <= sysGreen
+          ? "good"
+          : avgSys <= sysWarning
+            ? "warning"
+            : "bad";
     insights.push({
       icon: "❤️",
       label: { de: "Blutdruck", en: "Blood Pressure" },
       status,
       detail: {
-        de: `Ø ${rounded} mmHg systolisch`,
-        en: `Avg ${rounded} mmHg systolic`,
+        de:
+          avgSys < sysLow
+            ? `Ø ${rounded} mmHg – zu niedrig (>${sysLow} empfohlen)`
+            : `Ø ${rounded} mmHg systolisch`,
+        en:
+          avgSys < sysLow
+            ? `Avg ${rounded} mmHg – too low (>${sysLow} recommended)`
+            : `Avg ${rounded} mmHg systolic`,
       },
     });
   }
@@ -227,26 +224,13 @@ export default function InsightsCard() {
     enabled: !!actor && !actorFetching,
   });
 
-  const { data: scoreHistory = [], isLoading: scoreLoading } = useQuery<
-    ScoreEntry[]
-  >({
-    queryKey: ["scoreHistory"],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getScoreHistoryForCaller();
-    },
-    enabled: !!actor && !actorFetching,
-  });
-
-  const isLoading = healthLoading || scoreLoading || actorFetching;
+  const isLoading = healthLoading || actorFetching;
 
   const last7 = getLast7Days();
   const daysWithData = healthData.filter((d) => last7.includes(d.date)).length;
   const hasEnoughData = daysWithData >= 2;
 
-  const insights = hasEnoughData
-    ? buildInsights(healthData, scoreHistory, age)
-    : [];
+  const insights = hasEnoughData ? buildInsights(healthData, age) : [];
 
   return (
     <div className="glass-card rounded-2xl p-5">

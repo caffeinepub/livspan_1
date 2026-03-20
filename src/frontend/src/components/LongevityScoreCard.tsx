@@ -75,14 +75,33 @@ function calcMovementScore(duration: number, intensity: number) {
   return durationScore * 0.6 + intensityScore * 0.4;
 }
 
-// Age-adapted BP thresholds – mirrors StressCard logic
+// Age-adapted BP upper thresholds – mirrors StressCard logic
 function bpThresholds(age: number | null) {
   if (age !== null && age >= 80) return { sysOptimal: 142, diaOptimal: 87 };
   if (age !== null && age >= 60) return { sysOptimal: 134, diaOptimal: 82 };
   if (age !== null && age >= 45) return { sysOptimal: 125, diaOptimal: 82 };
   if (age !== null && age >= 30) return { sysOptimal: 122, diaOptimal: 80 };
-  // 18-29 or unknown
   return { sysOptimal: 115, diaOptimal: 75 };
+}
+
+// Age-adapted BP lower thresholds
+function bpLowerThresholds(age: number | null) {
+  if (age !== null && age >= 80)
+    return { sysLow: 105, sysVeryLow: 95, diaLow: 65, diaVeryLow: 55 };
+  if (age !== null && age >= 60)
+    return { sysLow: 100, sysVeryLow: 90, diaLow: 65, diaVeryLow: 55 };
+  if (age !== null && age >= 45)
+    return { sysLow: 95, sysVeryLow: 85, diaLow: 60, diaVeryLow: 50 };
+  if (age !== null && age >= 30)
+    return { sysLow: 90, sysVeryLow: 80, diaLow: 60, diaVeryLow: 50 };
+  return { sysLow: 90, sysVeryLow: 80, diaLow: 60, diaVeryLow: 50 };
+}
+
+// Age-adapted HR lower thresholds
+function hrLowerThreshold(age: number | null) {
+  if (age !== null && age >= 60) return { hrLow: 50, hrVeryLow: 40 };
+  if (age !== null && age >= 30) return { hrLow: 45, hrVeryLow: 35 };
+  return { hrLow: 40, hrVeryLow: 30 };
 }
 
 function calcStressScore(
@@ -93,15 +112,30 @@ function calcStressScore(
 ) {
   if (systolic === 0 && diastolic === 0 && restingHr === 0) return 0;
   const { sysOptimal, diaOptimal } = bpThresholds(age);
-  const systolicScore = Math.max(
-    0,
-    100 - Math.abs(systolic - sysOptimal) * 1.5,
-  );
-  const diastolicScore = Math.max(
-    0,
-    100 - Math.abs(diastolic - diaOptimal) * 2,
-  );
-  const hrScore = Math.max(0, 100 - Math.abs(restingHr - 55) * 1.5);
+  const { sysLow, diaLow } = bpLowerThresholds(age);
+  const { hrLow } = hrLowerThreshold(age);
+
+  let systolicScore: number;
+  if (systolic > 0 && systolic < sysLow) {
+    systolicScore = Math.max(0, 60 - (sysLow - systolic) * 2);
+  } else {
+    systolicScore = Math.max(0, 100 - Math.abs(systolic - sysOptimal) * 1.5);
+  }
+
+  let diastolicScore: number;
+  if (diastolic > 0 && diastolic < diaLow) {
+    diastolicScore = Math.max(0, 60 - (diaLow - diastolic) * 2);
+  } else {
+    diastolicScore = Math.max(0, 100 - Math.abs(diastolic - diaOptimal) * 2);
+  }
+
+  let hrScore: number;
+  if (restingHr > 0 && restingHr < hrLow) {
+    hrScore = Math.max(0, 60 - (hrLow - restingHr) * 2);
+  } else {
+    hrScore = Math.max(0, 100 - Math.abs(restingHr - 55) * 1.5);
+  }
+
   return (systolicScore + diastolicScore + hrScore) / 3;
 }
 
@@ -166,7 +200,6 @@ function getAgeScoreInsight(age: number, lang: string): string {
         return "Age 30+: Stress management and consistent routines now lay the foundation for your longevity.";
     }
   }
-  // 18-29
   switch (lang) {
     case "de":
       return "Deine Gewohnheiten jetzt bestimmen deine Gesundheit in 30 Jahren — früh starten macht den größten Unterschied.";

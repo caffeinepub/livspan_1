@@ -194,89 +194,91 @@ export default function DiaryCard() {
           </p>
         </motion.div>
       ) : (
-        <div className="space-y-3" data-ocid="diary.list">
-          <AnimatePresence initial={false}>
-            {entries.map((entry, idx) => (
-              <motion.div
-                key={String(entry.id)}
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
-                transition={{ duration: 0.2 }}
-                className="group rounded-xl bg-muted/20 border border-border/30 hover:border-border/50 p-3 transition-colors"
-                data-ocid={`diary.item.${idx + 1}`}
-              >
-                {editingId === entry.id ? (
-                  <div className="space-y-2">
-                    <Textarea
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      className="text-sm resize-none bg-muted/30 border-border/40 focus:border-violet-400/50 min-h-[80px]"
-                      autoFocus
-                      data-ocid="diary.textarea"
-                    />
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        type="button"
-                        onClick={handleCancelEdit}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                        data-ocid="diary.cancel_button"
-                      >
-                        <X className="w-3 h-3" />
-                        {tr.diary_cancel}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleSaveEdit}
-                        disabled={!editText.trim() || updateEntry.isPending}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition-colors disabled:opacity-40"
-                        data-ocid="diary.save_button"
-                      >
-                        {updateEntry.isPending ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Check className="w-3 h-3" />
-                        )}
-                        {tr.diary_save}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <span className="text-[10px] text-muted-foreground/70 font-mono bg-muted/40 px-2 py-0.5 rounded-full">
-                        {entry.timestamp}
-                      </span>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <div className="max-h-[360px] min-h-[120px] overflow-y-auto pr-1">
+          <div className="space-y-3" data-ocid="diary.list">
+            <AnimatePresence initial={false}>
+              {entries.map((entry, idx) => (
+                <motion.div
+                  key={String(entry.id)}
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: 20, transition: { duration: 0.15 } }}
+                  transition={{ duration: 0.2 }}
+                  className="group rounded-xl bg-muted/20 border border-border/30 hover:border-border/50 p-3 transition-colors"
+                  data-ocid={`diary.item.${idx + 1}`}
+                >
+                  {editingId === entry.id ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        className="text-sm resize-none bg-muted/30 border-border/40 focus:border-violet-400/50 min-h-[80px]"
+                        autoFocus
+                        data-ocid="diary.textarea"
+                      />
+                      <div className="flex gap-2 justify-end">
                         <button
                           type="button"
-                          onClick={() => startEdit(entry.id, entry.text)}
-                          className="w-6 h-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-violet-400 hover:bg-violet-500/10 transition-colors"
-                          aria-label={tr.diary_edit}
-                          data-ocid={`diary.edit_button.${idx + 1}`}
+                          onClick={handleCancelEdit}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                          data-ocid="diary.cancel_button"
                         >
-                          <Pencil className="w-3 h-3" />
+                          <X className="w-3 h-3" />
+                          {tr.diary_cancel}
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDelete(entry.id)}
-                          disabled={deleteEntry.isPending}
-                          className="w-6 h-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
-                          aria-label={tr.diary_delete}
-                          data-ocid={`diary.delete_button.${idx + 1}`}
+                          onClick={handleSaveEdit}
+                          disabled={!editText.trim() || updateEntry.isPending}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] bg-violet-500/20 text-violet-300 hover:bg-violet-500/30 transition-colors disabled:opacity-40"
+                          data-ocid="diary.save_button"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          {updateEntry.isPending ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Check className="w-3 h-3" />
+                          )}
+                          {tr.diary_save}
                         </button>
                       </div>
                     </div>
-                    <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">
-                      {entry.text}
-                    </p>
-                  </>
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                  ) : (
+                    <>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="text-[10px] text-muted-foreground/70 font-mono bg-muted/40 px-2 py-0.5 rounded-full">
+                          {entry.timestamp}
+                        </span>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(entry.id, entry.text)}
+                            className="w-6 h-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-violet-400 hover:bg-violet-500/10 transition-colors"
+                            aria-label={tr.diary_edit}
+                            data-ocid={`diary.edit_button.${idx + 1}`}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(entry.id)}
+                            disabled={deleteEntry.isPending}
+                            className="w-6 h-6 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-40"
+                            aria-label={tr.diary_delete}
+                            data-ocid={`diary.delete_button.${idx + 1}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                        {entry.text}
+                      </p>
+                    </>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
         </div>
       )}
     </div>

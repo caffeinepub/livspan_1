@@ -40,7 +40,6 @@ import PlaceholderCard from "../components/PlaceholderCard";
 import RoutineModal from "../components/RoutineModal";
 import SleepCard from "../components/SleepCard";
 import StressCard from "../components/StressCard";
-import WeeklyScoreCard from "../components/WeeklyScoreCard";
 import { type CardKey, useDailyCardChecks } from "../hooks/useDailyCardChecks";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useLanguage } from "../hooks/useLanguage";
@@ -1168,9 +1167,9 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="lg:col-span-2"
+            className="lg:col-span-2 lg:sticky lg:top-[73px] lg:max-h-[calc(100vh-73px)]"
           >
-            <div className="glass-card rounded-2xl p-6">
+            <div className="glass-card rounded-2xl p-6 flex flex-col lg:max-h-[calc(100vh-73px-2rem)] lg:overflow-hidden">
               {/* Card header */}
               <div className="flex items-center justify-between mb-5">
                 <div>
@@ -1245,7 +1244,7 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
                   </Button>
                 </motion.div>
               ) : (
-                <div className="relative">
+                <div className="relative overflow-y-auto flex-1 min-h-0 pr-1">
                   {/* Timeline line */}
                   <div
                     className="absolute left-[46px] top-3 bottom-3 w-0.5 timeline-line"
@@ -1278,96 +1277,107 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-4 lg:sticky lg:top-[73px] lg:max-h-[calc(100vh-73px)] lg:overflow-hidden lg:pb-4"
           >
             <PersonalDataCard />
             <LongevityScoreCard />
-            <WeeklyScoreCard />
-            {/* Daily Routine Summary */}
-            {(() => {
-              const cardKeys: CardKey[] = [
-                "fasting",
-                "nutrition",
-                "movement",
-                "stress",
-                "sleep",
-                "diary",
-              ];
-              const checkedCount = cardKeys.filter(isChecked).length;
-              const allDone = checkedCount === 6;
-              return (
-                <div
-                  className="bg-card border border-border/40 rounded-xl px-4 py-3 flex flex-col gap-2"
-                  data-ocid="routines.panel"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      {tr.daily_routines}
-                    </span>
-                    <span
-                      className={`text-xs font-bold ${
-                        allDone ? "text-green-400" : "text-foreground"
-                      }`}
-                    >
-                      {tr.routines_progress(checkedCount)}
-                    </span>
+            {/* Personal Routines - scrollable */}
+            <div
+              className="flex flex-col gap-3 overflow-y-auto pr-0.5"
+              style={{ minHeight: 0, flex: "1 1 0" }}
+            >
+              {/* Daily Routine Summary */}
+              {(() => {
+                const cardKeys: CardKey[] = [
+                  "fasting",
+                  "nutrition",
+                  "movement",
+                  "stress",
+                  "sleep",
+                  "diary",
+                ];
+                const checkedCount = cardKeys.filter(isChecked).length;
+                const allDone = checkedCount === 6;
+                return (
+                  <div
+                    className="bg-card border border-border/40 rounded-xl px-4 py-3 flex flex-col gap-2"
+                    data-ocid="routines.panel"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {tr.daily_routines}
+                      </span>
+                      <span
+                        className={`text-xs font-bold ${
+                          allDone ? "text-green-400" : "text-foreground"
+                        }`}
+                      >
+                        {tr.routines_progress(checkedCount)}
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-border/40 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${(checkedCount / 6) * 100}%`,
+                          background: allDone
+                            ? "oklch(0.76 0.14 148)"
+                            : "oklch(0.65 0.12 148 / 0.7)",
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full h-1.5 bg-border/40 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(checkedCount / 6) * 100}%`,
-                        background: allDone
-                          ? "oklch(0.76 0.14 148)"
-                          : "oklch(0.65 0.12 148 / 0.7)",
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })()}
-            <CheckableCard
-              checked={isChecked("fasting")}
-              onToggle={() => toggle("fasting")}
-              label={isChecked("fasting") ? tr.mark_undone : tr.mark_done}
+                );
+              })()}
+              <CheckableCard
+                checked={isChecked("fasting")}
+                onToggle={() => toggle("fasting")}
+                label={isChecked("fasting") ? tr.mark_undone : tr.mark_done}
+              >
+                <FastingCard />
+              </CheckableCard>
+              <CheckableCard
+                checked={isChecked("nutrition")}
+                onToggle={() => toggle("nutrition")}
+                label={isChecked("nutrition") ? tr.mark_undone : tr.mark_done}
+              >
+                <NutritionCard />
+              </CheckableCard>
+              <CheckableCard
+                checked={isChecked("movement")}
+                onToggle={() => toggle("movement")}
+                label={isChecked("movement") ? tr.mark_undone : tr.mark_done}
+              >
+                <MovementCard />
+              </CheckableCard>
+              <CheckableCard
+                checked={isChecked("stress")}
+                onToggle={() => toggle("stress")}
+                label={isChecked("stress") ? tr.mark_undone : tr.mark_done}
+              >
+                <StressCard />
+              </CheckableCard>
+              <CheckableCard
+                checked={isChecked("sleep")}
+                onToggle={() => toggle("sleep")}
+                label={isChecked("sleep") ? tr.mark_undone : tr.mark_done}
+              >
+                <SleepCard />
+              </CheckableCard>
+            </div>
+            {/* Diary - scrollable */}
+            <div
+              className="overflow-y-auto pr-0.5"
+              style={{ minHeight: "120px", maxHeight: "40vh" }}
             >
-              <FastingCard />
-            </CheckableCard>
-            <CheckableCard
-              checked={isChecked("nutrition")}
-              onToggle={() => toggle("nutrition")}
-              label={isChecked("nutrition") ? tr.mark_undone : tr.mark_done}
-            >
-              <NutritionCard />
-            </CheckableCard>
-            <CheckableCard
-              checked={isChecked("movement")}
-              onToggle={() => toggle("movement")}
-              label={isChecked("movement") ? tr.mark_undone : tr.mark_done}
-            >
-              <MovementCard />
-            </CheckableCard>
-            <CheckableCard
-              checked={isChecked("stress")}
-              onToggle={() => toggle("stress")}
-              label={isChecked("stress") ? tr.mark_undone : tr.mark_done}
-            >
-              <StressCard />
-            </CheckableCard>
-            <CheckableCard
-              checked={isChecked("sleep")}
-              onToggle={() => toggle("sleep")}
-              label={isChecked("sleep") ? tr.mark_undone : tr.mark_done}
-            >
-              <SleepCard />
-            </CheckableCard>
-            <CheckableCard
-              checked={isChecked("diary")}
-              onToggle={() => toggle("diary")}
-              label={isChecked("diary") ? tr.mark_undone : tr.mark_done}
-            >
-              <DiaryCard />
-            </CheckableCard>
+              <CheckableCard
+                checked={isChecked("diary")}
+                onToggle={() => toggle("diary")}
+                label={isChecked("diary") ? tr.mark_undone : tr.mark_done}
+              >
+                <DiaryCard />
+              </CheckableCard>
+            </div>
             <PlaceholderCard
               title={tr.biomarkers_title}
               icon={<Activity className="w-5 h-5" />}
