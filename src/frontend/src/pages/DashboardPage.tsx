@@ -1169,7 +1169,7 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
             transition={{ duration: 0.4, delay: 0.1 }}
             className="lg:col-span-2 lg:sticky lg:top-[73px] lg:max-h-[calc(100vh-73px)]"
           >
-            <div className="glass-card rounded-2xl p-6 flex flex-col lg:max-h-[calc(100vh-73px-2rem)] lg:overflow-hidden">
+            <div className="glass-card rounded-2xl p-6 flex flex-col max-h-[75vh] overflow-hidden lg:max-h-[calc(100vh-73px-2rem)]">
               {/* Card header */}
               <div className="flex items-center justify-between mb-5">
                 <div>
@@ -1244,7 +1244,7 @@ export default function DashboardPage({ expiryDate }: DashboardPageProps) {
                   </Button>
                 </motion.div>
               ) : (
-                <div className="relative overflow-y-auto flex-1 min-h-0 pr-1">
+                <div className="relative overflow-y-auto overflow-x-hidden flex-1 min-h-0 pr-1">
                   {/* Timeline line */}
                   <div
                     className="absolute left-[46px] top-3 bottom-3 w-0.5 timeline-line"
@@ -1465,7 +1465,7 @@ function RoutineItem({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 8 }}
       transition={{ duration: 0.2 }}
-      className="flex items-start gap-4 group"
+      className="flex items-start gap-4 group w-full"
       data-ocid={`routine.item.${index}`}
     >
       {/* Time + node */}
@@ -1484,7 +1484,7 @@ function RoutineItem({
 
       {/* Routine card */}
       <div
-        className={`flex-1 rounded-xl p-3.5 border transition-all duration-200 ${
+        className={`flex-1 min-w-0 rounded-xl p-3.5 border transition-all duration-200 ${
           routine.done
             ? "bg-green-accent/8 border-green-accent/25 opacity-70"
             : "bg-muted/30 border-border/40 hover:border-border/70 hover:bg-muted/50"
@@ -1530,7 +1530,7 @@ function RoutineItem({
                 {routine.title}
               </p>
               {routine.description && (
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5 break-words">
                   {routine.description}
                 </p>
               )}
