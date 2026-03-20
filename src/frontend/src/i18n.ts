@@ -5,8 +5,8 @@ export const t = {
     hero_title_2: "Live Better, Longer.",
     hero_sub:
       "Track sleep, nutrition, exercise, fasting, and stress daily — and receive your personal LivSpan Score for a longer, healthier life.",
-    connect_wallet: "Connect Wallet",
-    connect_wallet_start: "Connect Wallet to Start",
+    connect_wallet: "LIV - Wallet erstellen",
+    connect_wallet_start: "Create LivSpan LIV Wallet",
     connecting: "Connecting...",
     feature_routines_title: "Daily Routines",
     feature_routines_desc:
@@ -257,8 +257,8 @@ export const t = {
     hero_title_2: "Besser leben, länger leben.",
     hero_sub:
       "Verfolge täglich Schlaf, Ernährung, Bewegung, Fasten und Stress — und erhalte deinen persönlichen LivSpan-Score für ein längeres, gesünderes Leben.",
-    connect_wallet: "Wallet verbinden",
-    connect_wallet_start: "Wallet verbinden und starten",
+    connect_wallet: "LIV - Wallet erstellen",
+    connect_wallet_start: "LivSpan LIV - Wallet erstellen",
     connecting: "Verbinde...",
     feature_routines_title: "Tägliche Routinen",
     feature_routines_desc:
@@ -510,8 +510,8 @@ export const t = {
     hero_title_2: "Живи лучше, живи дольше.",
     hero_sub:
       "Отслеживай сон, питание, физические нагрузки, голодание и стресс каждый день — и получай свой личный LivSpan Score для более долгой и здоровой жизни.",
-    connect_wallet: "Подключить кошелёк",
-    connect_wallet_start: "Подключить кошелёк для начала",
+    connect_wallet: "LIV - Wallet erstellen",
+    connect_wallet_start: "Создать LivSpan LIV Wallet",
     connecting: "Подключение...",
     feature_routines_title: "Ежедневные рутины",
     feature_routines_desc:
@@ -761,8 +761,8 @@ export const t = {
     hero_title_2: "活得更好，活得更久。",
     hero_sub:
       "每天追踪睡眠、营养、运动、禁食和压力——获取你的个人LivSpan评分，迈向更长寿、更健康的生活。",
-    connect_wallet: "连接钱包",
-    connect_wallet_start: "连接钱包开始",
+    connect_wallet: "LIV - Wallet erstellen",
+    connect_wallet_start: "创建 LivSpan LIV 钱包",
     connecting: "连接中...",
     feature_routines_title: "每日例程",
     feature_routines_desc:

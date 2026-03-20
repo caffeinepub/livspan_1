@@ -1,15 +1,33 @@
 import { Button } from "@/components/ui/button";
-import { Activity, Loader2, Shield, TrendingUp } from "lucide-react";
+import {
+  Activity,
+  ChevronDown,
+  Loader2,
+  Shield,
+  TrendingUp,
+} from "lucide-react";
 import { motion } from "motion/react";
+import { useRef, useState } from "react";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import { useLanguage } from "../hooks/useLanguage";
 import { t } from "../i18n";
+
+const LANGS = [
+  { code: "de" as const, flag: "🇩🇪", label: "DE" },
+  { code: "en" as const, flag: "🇬🇧", label: "EN" },
+  { code: "ru" as const, flag: "🇷🇺", label: "RU" },
+  { code: "zh" as const, flag: "🇨🇳", label: "ZH" },
+];
 
 export default function LandingPage() {
   const { login, loginStatus } = useInternetIdentity();
   const { lang, setLang } = useLanguage();
   const tr = t[lang];
   const isLoggingIn = loginStatus === "logging-in";
+  const [langOpen, setLangOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const currentLang = LANGS.find((l) => l.code === lang) ?? LANGS[0];
 
   const features = [
     {
@@ -44,8 +62,8 @@ export default function LandingPage() {
 
       {/* Nav */}
       <header className="sticky top-0 z-50 w-full border-b border-border/30 bg-background/60 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <img
               src="/assets/uploads/IMG_8398-1.png"
               alt="LivSpan leaf"
@@ -57,77 +75,81 @@ export default function LandingPage() {
           </div>
 
           {/* Nav + Language selector */}
-          <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="hidden md:inline text-green-accent font-medium">
-              {tr.nav_home}
-            </span>
+          <nav className="hidden md:flex items-center gap-4 text-sm text-muted-foreground">
+            <span className="text-green-accent font-medium">{tr.nav_home}</span>
           </nav>
 
-          <div className="flex items-center gap-3">
-            {/* Language toggle */}
-            <div className="flex items-center gap-1 bg-muted/40 rounded-full p-0.5 border border-border/30">
-              <button
-                type="button"
-                onClick={() => setLang("de")}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                  lang === "de"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                data-ocid="landing.toggle"
-              >
-                🇩🇪 DE
-              </button>
-              <button
-                type="button"
-                onClick={() => setLang("en")}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                  lang === "en"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                data-ocid="landing.toggle"
-              >
-                🇬🇧 EN
-              </button>
-              <button
-                type="button"
-                onClick={() => setLang("ru")}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                  lang === "ru"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                data-ocid="landing.toggle"
-              >
-                🇷🇺 RU
-              </button>
-              <button
-                type="button"
-                onClick={() => setLang("zh")}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                  lang === "zh"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                data-ocid="landing.toggle"
-              >
-                🇨🇳 ZH
-              </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Desktop language toggle - 4 pill buttons */}
+            <div className="hidden md:flex items-center gap-1 bg-muted/40 rounded-full p-0.5 border border-border/30">
+              {LANGS.map((l) => (
+                <button
+                  key={l.code}
+                  type="button"
+                  onClick={() => setLang(l.code)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    lang === l.code
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  data-ocid="landing.toggle"
+                >
+                  {l.flag} {l.label}
+                </button>
+              ))}
             </div>
+
+            {/* Mobile language dropdown */}
+            <div className="relative md:hidden" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setLangOpen((o) => !o)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium bg-muted/40 border border-border/30 text-foreground hover:bg-muted/60 transition-colors"
+                data-ocid="landing.toggle"
+              >
+                <span>{currentLang.flag}</span>
+                <span>{currentLang.label}</span>
+                <ChevronDown
+                  className={`w-3 h-3 transition-transform ${langOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {langOpen && (
+                <div className="absolute right-0 top-full mt-1.5 bg-background border border-border/40 rounded-xl shadow-lg overflow-hidden z-50 min-w-[80px]">
+                  {LANGS.map((l) => (
+                    <button
+                      key={l.code}
+                      type="button"
+                      onClick={() => {
+                        setLang(l.code);
+                        setLangOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors hover:bg-muted/60 ${
+                        lang === l.code
+                          ? "text-foreground bg-muted/40"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      <span>{l.flag}</span>
+                      <span>{l.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <Button
               data-ocid="landing.primary_button"
               onClick={login}
               disabled={isLoggingIn}
-              className="bg-green-accent text-background hover:bg-green-accent/90 font-semibold text-sm px-5"
+              className="bg-green-accent text-background hover:bg-green-accent/90 font-semibold text-sm px-4 sm:px-5 shrink-0"
             >
               {isLoggingIn ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {tr.connecting}
+                  <span className="hidden sm:inline">{tr.connecting}</span>
                 </>
               ) : (
-                tr.connect_wallet
+                <span>{tr.connect_wallet}</span>
               )}
             </Button>
           </div>
